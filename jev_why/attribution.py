@@ -37,11 +37,18 @@ from jev_why.budget import (
     estimate_state_tokens,
 )
 from jev_why.cache import Cache, resolve_cache
-from jev_why.chunking import Chunker, Segmentation, resolve_chunker
+from jev_why.chunking import Chunker, Segmentation, resolve_chunker, with_mask_mode
 from jev_why.client import JevClient, TypeSafeJevClient, resolve_model
 from jev_why.coalitions import EMPTY, CoalitionPlan, kernelshap_plan, occlusion_plan
 from jev_why.estimators import resolve_estimator
 from jev_why.executor import AsyncExecutor, ExecutorConfig, Progress
+from jev_why.faithfulness import (
+    DEFAULT_RANDOM_TRIALS,
+    DEFAULT_SCHEDULE,
+    FaithfulnessReport,
+    faithfulness_plan,
+    score_faithfulness,
+)
 from jev_why.questions import CONTEXT_LIMIT_TOKENS, QuestionSpec, panel_payload, validate_panel
 from jev_why.types import (
     Attribution,
@@ -265,6 +272,53 @@ def _build_question_explanation(
     )
 
 
+async def _faithfulness_for(
+    *,
+    question: str,
+    explanation: QuestionExplanation,
+    segmentation: Segmentation,
+    payload: Mapping[str, Any],
+    model: str,
+    executor: AsyncExecutor,
+    schedule: Sequence[float],
+    random_trials: int,
+    cross_mask: bool,
+    seed: int,
+) -> FaithfulnessReport:
+    negatives = [
+        a.span.index for a in sorted(explanation.attributions, key=lambda a: a.phi) if a.phi < 0
+    ]
+    plan = faithfulness_plan(
+        explanation.ranking(),
+        len(segmentation.spans),
+        schedule=schedule,
+        random_trials=random_trials,
+        negative_ranking=negatives,
+        seed=seed,
+    )
+
+    scoring = segmentation
+    if cross_mask:
+        other = MaskMode.DELETE if segmentation.mask_mode is MaskMode.REDACT else MaskMode.REDACT
+        scoring = with_mask_mode(segmentation, other)
+
+    outcome = await executor.run(
+        [
+            JevRequest(state=scoring.render(c), questions=payload, model=model, coalition=c)
+            for c in plan.coalitions
+        ]
+    )
+
+    value_spec = ValueSpec(question, explanation.qtype, explanation.link, explanation.target)
+    values = [
+        primary_value(r.answers[question], value_spec)
+        if r is not None and question in r.answers
+        else float("nan")
+        for r in outcome.responses
+    ]
+    return score_faithfulness(plan, values, cross_masked=cross_mask)
+
+
 async def explain_async(
     state: State,
     questions: Mapping[str, QuestionSpec],
@@ -279,6 +333,10 @@ async def explain_async(
     artifact_probe: bool = True,
     noise_probes: int = DEFAULT_NOISE_PROBES,
     shapley_budget: int | None = None,
+    faithfulness: bool = False,
+    faithfulness_schedule: Sequence[float] = DEFAULT_SCHEDULE,
+    random_trials: int = DEFAULT_RANDOM_TRIALS,
+    cross_mask: bool = True,
     cache: Cache | str | None = None,
     concurrency: int = 16,
     seed: int = 0,
@@ -309,16 +367,16 @@ async def explain_async(
 
     owned = client is None
     active = client or TypeSafeJevClient(api_key=api_key, model=prepared.model)
+    executor = AsyncExecutor(
+        active,
+        cache=resolve_cache(cache),
+        budget=guard,
+        config=ExecutorConfig(max_concurrency=concurrency, seed=seed),
+    )
     try:
-        executor = AsyncExecutor(
-            active,
-            cache=resolve_cache(cache),
-            budget=guard,
-            config=ExecutorConfig(max_concurrency=concurrency, seed=seed),
-        )
         outcome = await executor.run(requests, progress=progress)
     finally:
-        if owned and hasattr(active, "aclose"):
+        if owned and not faithfulness and hasattr(active, "aclose"):
             await active.aclose()
 
     plan_responses = outcome.responses[:n_plan]
@@ -364,6 +422,28 @@ async def explain_async(
             )
         explanations[name] = question_explanation
 
+    reports: dict[str, FaithfulnessReport] = {}
+    if faithfulness:
+        try:
+            for name, question_explanation in explanations.items():
+                reports[name] = await _faithfulness_for(
+                    question=name,
+                    explanation=question_explanation,
+                    segmentation=prepared.segmentation,
+                    payload=prepared.payload,
+                    model=prepared.model,
+                    executor=executor,
+                    schedule=faithfulness_schedule,
+                    random_trials=random_trials,
+                    cross_mask=cross_mask,
+                    seed=seed,
+                )
+                if not reports[name].credible:
+                    warnings.append(f"{name}: {reports[name].verdict()}")
+        finally:
+            if owned and hasattr(active, "aclose"):
+                await active.aclose()
+
     artifact = _artifact_score(plan_responses) if artifact_probe else None
     if artifact is not None and artifact > 0.5:
         warnings.append(
@@ -386,6 +466,7 @@ async def explain_async(
         seed=seed,
         artifact_score=artifact,
         warnings=tuple(warnings),
+        faithfulness=reports,
     )
 
 

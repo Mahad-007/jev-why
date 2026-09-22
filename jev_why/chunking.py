@@ -19,7 +19,7 @@ import re
 from collections.abc import Iterable, Sequence
 from collections.abc import Set as AbstractSet
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Protocol, runtime_checkable
 
 from jev_why.types import MaskMode, Span, SpanKind, State
@@ -368,6 +368,19 @@ class JsonLeafChunker:
         return JsonSegmentation(
             state, spans, tuple(p for p, _ in leaves), self.mask_mode, self.null_policy
         )
+
+
+def with_mask_mode(segmentation: Segmentation, mode: MaskMode) -> Segmentation:
+    """Return the same segmentation rendering under the other mask mode.
+
+    Scoring faithfulness with the very masker used to produce the attribution
+    partly rewards that masker's own artifacts: a ranking that learned "spans
+    whose redaction jars the model" scores well on a test that redacts spans
+    the same way. Flipping the mode breaks that circularity.
+    """
+    if segmentation.mask_mode is mode:
+        return segmentation
+    return replace(segmentation, _mask_mode=mode)  # type: ignore[type-var]
 
 
 def _require_text(state: State, who: str) -> str:

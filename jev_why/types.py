@@ -168,6 +168,11 @@ class Explanation:
 
     warnings: tuple[str, ...] = field(default_factory=tuple)
 
+    faithfulness: Mapping[str, Any] = field(default_factory=dict)
+    """Per-question faithfulness reports, when explain(faithfulness=True) was
+    asked for. Empty otherwise: the metrics cost extra calls, so they are opt-in
+    rather than silently billed."""
+
     def __getitem__(self, question: str) -> QuestionExplanation:
         return self.questions[question]
 
