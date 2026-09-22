@@ -1,0 +1,18 @@
+jev-why bundles a sample of a third-party dataset for its runnable example.
+
+deepset/prompt-injections
+  Source:  https://huggingface.co/datasets/deepset/prompt-injections
+  Licence: the dataset card carries two markings -- "apache-2.0" at the card
+           level and "cc-by-4.0" in dataset_info. Both are permissive and both
+           require attribution, so this notice cites both rather than choosing.
+  Used in: examples/data/prompt_injections_test.jsonl (the 116-row test split,
+           unmodified).
+
+The dataset card does not document label semantics, collection method, or
+language. examples/injection_screening.py verifies the label convention
+empirically before computing any calibration figure, and the README states what
+the dataset does and does not document.
+
+Nothing in examples/data/composed_page.md comes from the dataset except the
+single injected sentence, which is quoted from it and marked as such in that
+file. That document is a constructed illustration, not a dataset sample.

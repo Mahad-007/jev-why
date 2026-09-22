@@ -1,0 +1,24 @@
+# Secrets. This entry exists before any key touches the working tree.
+.env
+.env.*
+!.env.example
+
+# Response cache: content-addressed, but it stores raw states, which may be PII.
+.jev-why-cache/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
