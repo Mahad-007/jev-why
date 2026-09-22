@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# The single gate. CI runs this; run it before every commit.
+#
+#   ./verify          format, lint, types, tests, coverage
+#   ./verify --fast   types and tests only, for use during a build
+#   ./verify --fix    apply formatting and the lint fixes that are safe
+#
+# Every check here must pass with no TYPESAFE_API_KEY set. Tests that would
+# otherwise call the API run against recorded responses or the synthetic
+# oracle, so a green verify never depends on the network or on someone's quota.
+set -uo pipefail
+
+cd "$(dirname "$0")"
+PY=".venv/bin/python"
+[ -x "$PY" ] || PY="python3"
+
+FAST=0
+FIX=0
+for arg in "$@"; do
+  case "$arg" in
+    --fast) FAST=1 ;;
+    --fix)  FIX=1 ;;
+    *) echo "unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+
+failed=0
+step() {
+  local name="$1"; shift
+  printf '\n\033[1m%s\033[0m\n' "$name"
+  if "$@"; then
+    printf '  ok\n'
+  else
+    printf '  FAILED\n'
+    failed=1
+  fi
+}
+
+if [ "$FIX" = 1 ]; then
+  "$PY" -m ruff format jev_why examples
+  "$PY" -m ruff check --fix jev_why examples
+fi
+
+if [ "$FAST" = 0 ]; then
+  step "format"  "$PY" -m ruff format --check jev_why examples
+  step "lint"    "$PY" -m ruff check jev_why examples
+fi
+
+step "types" "$PY" -m mypy jev_why
+
+# JEV_WHY_OFFLINE is a belt-and-braces guard: the client refuses to build a real
+# transport when it is set, so a test that forgets to use a fake fails loudly
+# instead of quietly spending money.
+if [ "$FAST" = 1 ]; then
+  step "tests" env JEV_WHY_OFFLINE=1 "$PY" -m pytest jev_why -q
+else
+  step "tests" env JEV_WHY_OFFLINE=1 "$PY" -m pytest jev_why -q \
+    --cov=jev_why --cov-report=term-missing:skip-covered --cov-fail-under=85
+fi
+
+if [ "$failed" = 0 ]; then
+  printf '\n\033[32mverify passed\033[0m\n'
+else
+  printf '\n\033[31mverify failed\033[0m\n'
+fi
+exit "$failed"

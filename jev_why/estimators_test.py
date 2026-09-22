@@ -26,8 +26,7 @@ from jev_why.fakes import SyntheticOracle
 
 
 def test_kernelshap_recovers_known_shapley_values() -> None:
-    oracle = SyntheticOracle(n=6, additive={0: 0.3, 4: -0.2},
-                             interactions={frozenset({1, 2}): 0.4})
+    oracle = SyntheticOracle(n=6, additive={0: 0.3, 4: -0.2}, interactions={frozenset({1, 2}): 0.4})
     plan = kernelshap_plan(6, budget_calls=200)
     result = KernelShapEstimator().estimate(plan, oracle.evaluate(plan))
     assert np.allclose(result.phi, oracle.true_shapley(), atol=1e-6)
@@ -41,8 +40,9 @@ def test_permutation_and_kernelshap_agree_independently() -> None:
     converges as 1/sqrt(m). KernelSHAP is exact here; the gap is sampling error
     in the reference, not disagreement about the answer.
     """
-    oracle = SyntheticOracle(n=7, additive={i: 0.1 * i for i in range(7)},
-                             interactions={frozenset({0, 3, 5}): 0.9})
+    oracle = SyntheticOracle(
+        n=7, additive={i: 0.1 * i for i in range(7)}, interactions={frozenset({0, 3, 5}): 0.9}
+    )
     truth = oracle.true_shapley()
     kplan = kernelshap_plan(7, budget_calls=400)
     pplan = permutation_plan(7, m_permutations=300)
@@ -139,8 +139,13 @@ def test_kernelshap_falls_back_rather_than_fitting_underdetermined() -> None:
     oracle = SyntheticOracle(n=8, additive={0: 0.5})
     sparse = CoalitionPlan(
         n_spans=8,
-        coalitions=(frozenset(range(8)), frozenset(),
-                    frozenset({0}), frozenset({1}), frozenset({0, 1})),
+        coalitions=(
+            frozenset(range(8)),
+            frozenset(),
+            frozenset({0}),
+            frozenset({1}),
+            frozenset({0, 1}),
+        ),
         estimator="shapley",
     )
     result = KernelShapEstimator().estimate(sparse, oracle.evaluate(sparse))

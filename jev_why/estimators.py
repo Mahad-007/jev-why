@@ -31,7 +31,8 @@ class EstimateResult:
 
 
 class Estimator(Protocol):
-    name: str
+    @property
+    def name(self) -> str: ...
 
     def estimate(self, plan: CoalitionPlan, values: NDArray[np.float64]) -> EstimateResult: ...
 
@@ -85,8 +86,7 @@ class OcclusionEstimator:
         else:
             phi = sufficiency.copy()
 
-        return EstimateResult(phi, necessity, sufficiency,
-                              _efficiency_gap(phi, v_full, v_empty))
+        return EstimateResult(phi, necessity, sufficiency, _efficiency_gap(phi, v_full, v_empty))
 
 
 @dataclass(frozen=True)
@@ -130,8 +130,14 @@ class KernelShapEstimator:
             # Not enough information to identify n parameters; fall back rather
             # than return a confidently wrong fit.
             fallback = OcclusionEstimator().estimate(plan, values)
-            return EstimateResult(fallback.phi, fallback.necessity, fallback.sufficiency,
-                                  fallback.efficiency_gap, None, dropped)
+            return EstimateResult(
+                fallback.phi,
+                fallback.necessity,
+                fallback.sufficiency,
+                fallback.efficiency_gap,
+                None,
+                dropped,
+            )
 
         z = np.vstack(rows)
         y = np.asarray(targets, dtype=np.float64)
@@ -167,8 +173,14 @@ class KernelShapEstimator:
         stderr[n - 1] = float(np.sqrt(np.sum(stderr_free**2)))
 
         occlusion = OcclusionEstimator().estimate(plan, values)
-        return EstimateResult(phi, occlusion.necessity, occlusion.sufficiency,
-                              _efficiency_gap(phi, v_full, v_empty), stderr, dropped)
+        return EstimateResult(
+            phi,
+            occlusion.necessity,
+            occlusion.sufficiency,
+            _efficiency_gap(phi, v_full, v_empty),
+            stderr,
+            dropped,
+        )
 
 
 @dataclass(frozen=True)
@@ -204,8 +216,9 @@ class PermutationShapEstimator:
         phi = np.divide(phi, np.maximum(counts, 1.0))
         v_full, v_empty = _endpoints(plan, values)
         occlusion = OcclusionEstimator().estimate(plan, values)
-        return EstimateResult(phi, occlusion.necessity, occlusion.sufficiency,
-                              _efficiency_gap(phi, v_full, v_empty))
+        return EstimateResult(
+            phi, occlusion.necessity, occlusion.sufficiency, _efficiency_gap(phi, v_full, v_empty)
+        )
 
 
 def resolve_estimator(name: str) -> Estimator:
@@ -221,6 +234,10 @@ def resolve_estimator(name: str) -> Estimator:
 
 
 __all__ = [
-    "EstimateResult", "Estimator", "KernelShapEstimator", "OcclusionEstimator",
-    "PermutationShapEstimator", "resolve_estimator",
+    "EstimateResult",
+    "Estimator",
+    "KernelShapEstimator",
+    "OcclusionEstimator",
+    "PermutationShapEstimator",
+    "resolve_estimator",
 ]

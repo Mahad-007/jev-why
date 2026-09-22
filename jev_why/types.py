@@ -7,9 +7,10 @@ back years later as an audit artifact.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Literal, Mapping
+from typing import Any, Literal
 
 # A Jev `state` is whatever you are asking about.
 State = str | dict[str, Any] | list[Any]
@@ -120,8 +121,9 @@ class QuestionExplanation:
     noise_sigma: float
     estimator: str
 
-    def top(self, k: int = 5, *, signed: bool = False, include_insignificant: bool = False
-            ) -> tuple[Attribution, ...]:
+    def top(
+        self, k: int = 5, *, signed: bool = False, include_insignificant: bool = False
+    ) -> tuple[Attribution, ...]:
         rows = self.attributions
         if not include_insignificant:
             rows = tuple(a for a in rows if a.significant)
@@ -131,8 +133,9 @@ class QuestionExplanation:
     def ranking(self) -> tuple[int, ...]:
         """Span indices ordered by descending |phi|. The input to every
         faithfulness metric."""
-        return tuple(a.span.index for a in sorted(
-            self.attributions, key=lambda a: abs(a.phi), reverse=True))
+        return tuple(
+            a.span.index for a in sorted(self.attributions, key=lambda a: abs(a.phi), reverse=True)
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,9 +192,14 @@ class Answer:
     noul: float | None = None
     choice: str | None = None
     score: float | None = None
-    probabilities: Mapping[str, float] | None = None
+    probabilities: Mapping[Any, float] | None = None
+    """Keyed by option name for a choice, by level index for a score."""
+
     confidence: float | None = None
-    legend: Mapping[str, str] | None = None
+    """Absent for a noul: the API returns only the raw probability, so
+    jev-why derives noul confidence rather than reading it."""
+
+    legend: Mapping[Any, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,7 +224,19 @@ class JevRequest:
 
 
 __all__ = [
-    "Answer", "Attribution", "Coalition", "Explanation", "JevRequest", "JevResponse",
-    "Link", "MaskMode", "QuestionExplanation", "QuestionType", "Span", "SpanKind",
-    "Spend", "State", "Usage",
+    "Answer",
+    "Attribution",
+    "Coalition",
+    "Explanation",
+    "JevRequest",
+    "JevResponse",
+    "Link",
+    "MaskMode",
+    "QuestionExplanation",
+    "QuestionType",
+    "Span",
+    "SpanKind",
+    "Spend",
+    "State",
+    "Usage",
 ]

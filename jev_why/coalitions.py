@@ -14,10 +14,11 @@ difference. Accuracy becomes an incremental purchase rather than a fresh one.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from math import comb
 from random import Random
-from typing import Any, Mapping
+from typing import Any
 
 from jev_why.types import Coalition
 
@@ -125,8 +126,13 @@ def kernelshap_plan(n: int, *, budget_calls: int | None = None, seed: int = 0) -
 
     final = _dedupe(coalitions)
     weights_out = tuple(kernel_weight(n, len(c)) for c in final)
-    return CoalitionPlan(n, final, "shapley", weights_out,
-                         meta={"budget": budget, "seed": seed, "exhausted": sorted(exhausted)})
+    return CoalitionPlan(
+        n,
+        final,
+        "shapley",
+        weights_out,
+        meta={"budget": budget, "seed": seed, "exhausted": sorted(exhausted)},
+    )
 
 
 def permutation_plan(n: int, *, m_permutations: int = 20, seed: int = 0) -> CoalitionPlan:
@@ -151,8 +157,12 @@ def permutation_plan(n: int, *, m_permutations: int = 20, seed: int = 0) -> Coal
             for item in perm:
                 running.add(item)
                 coalitions.append(frozenset(running))
-    return CoalitionPlan(n, _dedupe(coalitions), "permutation",
-                         meta={"permutations": tuple(permutations), "seed": seed})
+    return CoalitionPlan(
+        n,
+        _dedupe(coalitions),
+        "permutation",
+        meta={"permutations": tuple(permutations), "seed": seed},
+    )
 
 
 def _all_subsets(n: int, k: int) -> list[Coalition]:
@@ -164,7 +174,7 @@ def _all_subsets(n: int, k: int) -> list[Coalition]:
 def _weighted_pick(rng: Random, items: list[int], probs: list[float]) -> int:
     r = rng.random()
     acc = 0.0
-    for item, p in zip(items, probs):
+    for item, p in zip(items, probs, strict=True):
         acc += p
         if r <= acc:
             return item
@@ -184,6 +194,10 @@ def _dedupe(coalitions: list[Coalition]) -> tuple[Coalition, ...]:
 
 
 __all__ = [
-    "EMPTY", "CoalitionPlan", "kernel_weight", "kernelshap_plan", "occlusion_plan",
+    "EMPTY",
+    "CoalitionPlan",
+    "kernel_weight",
+    "kernelshap_plan",
+    "occlusion_plan",
     "permutation_plan",
 ]

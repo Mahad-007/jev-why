@@ -8,15 +8,16 @@ without spending a call or holding an API key.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass, field
 from random import Random
-from typing import AbstractSet, Mapping
 
 import numpy as np
 from numpy.typing import NDArray
 
 from jev_why.coalitions import CoalitionPlan
-from jev_why.types import Answer, Coalition, JevResponse, Usage
+from jev_why.types import Answer, JevResponse, Usage
 
 
 @dataclass
@@ -104,8 +105,9 @@ class FakeJevClient:
     def __post_init__(self) -> None:
         self.calls = 0
 
-    async def system_one(self, state: object, questions: Mapping[str, object],
-                         *, model: str | None = None) -> JevResponse:
+    async def system_one(
+        self, state: object, questions: Mapping[str, object], *, model: str | None = None
+    ) -> JevResponse:
         ordinal = self.calls
         self.calls += 1
         if ordinal in self.fail_on:
@@ -115,8 +117,9 @@ class FakeJevClient:
         return JevResponse(self.model, answers, Usage(tokens, 0))
 
 
-def noul_responder(weights: Mapping[str, float], *, question: str = "q",
-                   base: float = 0.0) -> object:
+def noul_responder(
+    weights: Mapping[str, float], *, question: str = "q", base: float = 0.0
+) -> object:
     """A responder whose probability rises with each keyword present in the
     state. Gives a text-level oracle with a known answer for wiring tests."""
 

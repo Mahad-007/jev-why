@@ -16,9 +16,11 @@ that property is tested for every implementation.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable, Sequence
+from collections.abc import Set as AbstractSet
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import AbstractSet, Any, Iterable, Protocol, Sequence, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from jev_why.types import MaskMode, Span, SpanKind, State
 
@@ -97,8 +99,44 @@ class TextSegmentation:
 
 
 _ABBREVIATIONS = frozenset(
-    """mr mrs ms dr prof sr jr st vs etc e.g i.e cf al inc ltd co corp dept
-    fig no vol pp ca approx est min max sec hr hrs am pm u.s u.k e.u""".split()
+    [
+        "mr",
+        "mrs",
+        "ms",
+        "dr",
+        "prof",
+        "sr",
+        "jr",
+        "st",
+        "vs",
+        "etc",
+        "e.g",
+        "i.e",
+        "cf",
+        "al",
+        "inc",
+        "ltd",
+        "co",
+        "corp",
+        "dept",
+        "fig",
+        "no",
+        "vol",
+        "pp",
+        "ca",
+        "approx",
+        "est",
+        "min",
+        "max",
+        "sec",
+        "hr",
+        "hrs",
+        "am",
+        "pm",
+        "u.s",
+        "u.k",
+        "e.u",
+    ]
 )
 
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])[\"')\]]*\s+")
@@ -209,8 +247,9 @@ class SentenceChunker:
             _merge_runts(text, split_sentences(text), min_chars=self.min_chars),
             max_spans=self.max_spans,
         )
-        return TextSegmentation(text, _text_spans(text, ranges, SpanKind.SENTENCE, "s"),
-                                self.mask_mode)
+        return TextSegmentation(
+            text, _text_spans(text, ranges, SpanKind.SENTENCE, "s"), self.mask_mode
+        )
 
 
 @dataclass(frozen=True)
@@ -223,8 +262,9 @@ class BlockChunker:
     def segment(self, state: State) -> TextSegmentation:
         text = _require_text(state, "BlockChunker")
         ranges = _cap_spans(
-            _merge_runts(text, split_blocks(text, granularity=self.granularity),
-                         min_chars=self.min_chars),
+            _merge_runts(
+                text, split_blocks(text, granularity=self.granularity), min_chars=self.min_chars
+            ),
             max_spans=self.max_spans,
         )
         kind = SpanKind.PARAGRAPH if self.granularity == "paragraph" else SpanKind.LINE
@@ -289,7 +329,7 @@ class JsonSegmentation:
     def render(self, keep: AbstractSet[int]) -> dict[str, Any] | list[Any]:
         out = deepcopy(self.original)
         replacement: Any = None if self.null_policy == "null" else JSON_STRING_PLACEHOLDER
-        for span, path in zip(self._spans, self._paths):
+        for span, path in zip(self._spans, self._paths, strict=True):
             if span.index not in keep:
                 _set_at(out, path, replacement)
         return out
@@ -325,8 +365,9 @@ class JsonLeafChunker:
             )
             for i, (path, value) in enumerate(leaves)
         )
-        return JsonSegmentation(state, spans, tuple(p for p, _ in leaves),
-                                self.mask_mode, self.null_policy)
+        return JsonSegmentation(
+            state, spans, tuple(p for p, _ in leaves), self.mask_mode, self.null_policy
+        )
 
 
 def _require_text(state: State, who: str) -> str:
@@ -363,7 +404,16 @@ def resolve_chunker(chunker: Chunker | str, state: State) -> Chunker:
 
 
 __all__ = [
-    "BlockChunker", "Chunker", "JsonLeafChunker", "JsonSegmentation", "Segmentation",
-    "SentenceChunker", "TextSegmentation", "auto_chunker", "estimate_tokens",
-    "resolve_chunker", "split_blocks", "split_sentences",
+    "BlockChunker",
+    "Chunker",
+    "JsonLeafChunker",
+    "JsonSegmentation",
+    "Segmentation",
+    "SentenceChunker",
+    "TextSegmentation",
+    "auto_chunker",
+    "estimate_tokens",
+    "resolve_chunker",
+    "split_blocks",
+    "split_sentences",
 ]

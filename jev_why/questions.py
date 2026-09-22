@@ -7,8 +7,9 @@ after N of them.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, ClassVar, Mapping, Sequence
+from typing import Any, ClassVar
 
 from jev_why.types import QuestionType
 
@@ -136,7 +137,15 @@ def panel_payload(questions: Mapping[str, QuestionSpec]) -> dict[str, Any]:
 
 
 __all__ = [
-    "CONTEXT_LIMIT_TOKENS", "Choice", "MAX_CHOICE_OPTIONS", "MAX_SCORE_LEVELS",
-    "MIN_SCORE_LEVELS", "Noul", "QuestionError", "QuestionSpec", "Score",
-    "panel_payload", "validate_panel",
+    "CONTEXT_LIMIT_TOKENS",
+    "MAX_CHOICE_OPTIONS",
+    "MAX_SCORE_LEVELS",
+    "MIN_SCORE_LEVELS",
+    "Choice",
+    "Noul",
+    "QuestionError",
+    "QuestionSpec",
+    "Score",
+    "panel_payload",
+    "validate_panel",
 ]

@@ -20,8 +20,8 @@ Two quantities come out of every question:
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Mapping, Sequence
 
 from jev_why.types import Answer, Link, QuestionType
 
@@ -142,9 +142,9 @@ def jensen_shannon(p: Sequence[float], q: Sequence[float]) -> float:
     pn, qn = _normalise(p), _normalise(q)
 
     def kl(a: Sequence[float], b: Sequence[float]) -> float:
-        return sum(x * math.log2(x / y) for x, y in zip(a, b) if x > 0 and y > 0)
+        return sum(x * math.log2(x / y) for x, y in zip(a, b, strict=True) if x > 0 and y > 0)
 
-    m = tuple((x + y) / 2 for x, y in zip(pn, qn))
+    m = tuple((x + y) / 2 for x, y in zip(pn, qn, strict=True))
     return max(0.0, 0.5 * kl(pn, m) + 0.5 * kl(qn, m))
 
 
@@ -161,7 +161,7 @@ def wasserstein1(p: Sequence[float], q: Sequence[float]) -> float:
     pn, qn = _normalise(p), _normalise(q)
     cumulative = 0.0
     total = 0.0
-    for x, y in zip(pn[:-1], qn[:-1]):
+    for x, y in zip(pn[:-1], qn[:-1], strict=True):
         cumulative += x - y
         total += abs(cumulative)
     return total / (len(p) - 1)
@@ -180,6 +180,15 @@ def magnitude(baseline: Answer, masked: Answer, qtype: QuestionType) -> float:
 
 
 __all__ = [
-    "EPS", "ValueSpec", "choose_link", "distribution", "expected_level", "is_saturated",
-    "jensen_shannon", "logit", "magnitude", "primary_value", "wasserstein1",
+    "EPS",
+    "ValueSpec",
+    "choose_link",
+    "distribution",
+    "expected_level",
+    "is_saturated",
+    "jensen_shannon",
+    "logit",
+    "magnitude",
+    "primary_value",
+    "wasserstein1",
 ]

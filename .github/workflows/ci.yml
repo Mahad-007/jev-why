@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    # A hung install or a runaway test should fail the job rather than sit in
+    # the queue burning minutes.
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor and the ceiling. Everything between is covered by the floor's
+        # syntax rules and the ceiling's deprecations.
+        python-version: ["3.10", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      # No secrets are provided to this job on purpose. verify must be green
+      # without an API key, which is what keeps the test suite honest about
+      # where its numbers come from.
+      - run: ./verify
