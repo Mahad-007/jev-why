@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jev-why"
+version = "0.1.0"
+description = "Causal attribution and calibration for TypeSafe Jev decisions"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+keywords = ["jev", "typesafe", "explainability", "attribution", "shapley", "calibration"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# numpy is a deliberate core dependency. Constrained weighted least squares,
+# isotonic regression and bootstrap resampling in pure Python would be both slow
+# and more bug-prone than the thing they replace.
+dependencies = [
+    "typesafe-sdk>=0.7.1",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+# Rendering stays optional so `import jev_why` never pulls matplotlib. Every
+# renderer has a text fallback that works with core deps alone.
+plot = ["matplotlib>=3.8"]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5.0",
+]
+
+[project.scripts]
+jev-why = "jev_why.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/maddy/jev-why"
+Issues = "https://github.com/maddy/jev-why/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["jev_why"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+    "E501",    # line length is handled by the formatter
+    "RUF001",  # we use real typographic characters in placeholders on purpose
+    "RUF002",
+    "RUF003",
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unreachable = true
+disallow_untyped_defs = true
+# numpy's stubs are precise enough to be worth checking against, but matplotlib's
+# are not shipped, and it is an optional import behind a guard.
+[[tool.mypy.overrides]]
+module = ["matplotlib.*", "typesafe_sdk.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+# Tests live beside the code they cover, so the test path is the package itself.
+testpaths = ["jev_why"]
+python_files = ["*_test.py"]
+asyncio_mode = "auto"
+filterwarnings = ["error"]
