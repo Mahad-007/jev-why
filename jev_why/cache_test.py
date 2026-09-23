@@ -110,3 +110,19 @@ def test_resolve_cache_accepts_none_a_path_or_an_instance(tmp_path: Path) -> Non
 
     existing = MemoryCache()
     assert resolve_cache(existing) is existing
+
+
+def test_the_database_file_is_owner_only_not_just_its_directory(tmp_path: Path) -> None:
+    """Defence in depth. The cache holds raw states, which for tickets or
+    documents may be personal data, and a 0700 directory protecting a 0644 file
+    is one loosened mode away from exposing all of it."""
+    with SqliteCache(tmp_path) as cache:
+        cache.put("k", _response())
+        modes = {
+            path.name: oct(os.stat(path).st_mode)[-3:]
+            for path in tmp_path.iterdir()
+            if path.is_file()
+        }
+
+    assert modes, "the cache must have written something"
+    assert all(mode == "600" for mode in modes.values()), modes

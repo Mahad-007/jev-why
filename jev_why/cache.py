@@ -200,6 +200,7 @@ class SqliteCache:
         self._lock = threading.Lock()
         self._conn = sqlite3.connect(self.path, check_same_thread=False)
         self._conn.execute("PRAGMA journal_mode=WAL")
+        self._restrict_permissions()
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS responses ("
             " key TEXT PRIMARY KEY, model TEXT NOT NULL, body TEXT NOT NULL,"
@@ -207,6 +208,21 @@ class SqliteCache:
             " created_at REAL NOT NULL DEFAULT (julianday('now')))"
         )
         self._conn.commit()
+
+    def _restrict_permissions(self) -> None:
+        """Owner-only on the database itself, not just its directory.
+
+        The directory is already 0700, but relying on that alone means one
+        loosened mode -- or one file copied out of it -- exposes every raw
+        state the cache holds, which for tickets, diffs or documents may be
+        personal data. WAL mode creates sibling files that need the same
+        treatment.
+        """
+        for suffix in ("", "-wal", "-shm"):
+            sibling = Path(f"{self.path}{suffix}")
+            if sibling.exists():
+                with contextlib.suppress(OSError):
+                    os.chmod(sibling, 0o600)
 
     def get(self, key: str) -> JevResponse | None:
         with self._lock:
@@ -230,6 +246,7 @@ class SqliteCache:
                 (key, response.model, _encode(response), response.usage.input_tokens),
             )
             self._conn.commit()
+        self._restrict_permissions()
         self._stats = CacheStats(self._stats.hits, self._stats.misses, self._stats.writes + 1)
 
     def prune(self, *, all_entries: bool = False, older_than_days: float | None = None) -> int:
