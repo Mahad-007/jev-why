@@ -36,6 +36,21 @@ class ExecutorConfig:
     max_attempts: int = 4
     adaptive: bool = True
     seed: int = 0
+    backoff_base_s: float = 0.25
+    backoff_cap_s: float = 20.0
+    """How long to wait between retries, as base * 2**attempt capped at cap.
+
+    The defaults suit a per-second rate limit, where the first retry should be
+    quick. A provider that enforces a quota over an hour is a different animal:
+    retrying in a quarter of a second just spends another unit of a quota that
+    has already run out, so both numbers need raising together. Raising only
+    the cap does nothing, since it takes eleven doublings to get there from
+    0.25.
+
+    A run against such a provider is survivable at all only because every
+    successful response is cached the moment it arrives, so an interrupted run
+    resumes without paying for anything twice.
+    """
 
 
 @dataclass(frozen=True)
@@ -187,7 +202,14 @@ class AsyncExecutor:
                         state.done += 1
                         _report(progress, state, len(requests), self.budget)
                         return
-                    await self._sleep(backoff_delay(attempt, rng=self._rng))
+                    await self._sleep(
+                        backoff_delay(
+                            attempt,
+                            base=self.config.backoff_base_s,
+                            cap=self.config.backoff_cap_s,
+                            rng=self._rng,
+                        )
+                    )
                     continue
                 finally:
                     await gate.release()

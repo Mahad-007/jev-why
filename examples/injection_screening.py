@@ -71,6 +71,22 @@ def load_dotenv() -> None:
         os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 
 
+# jevai.org enforces a quota over a long window rather than a rate per second,
+# and it signals exhaustion with HTTP 200 and code -1. So the example paces
+# itself, retries patiently, and leans on the cache: every answer is written as
+# it arrives, so an interrupted run resumes without paying twice. Tune with
+# JEV_WHY_RPM and JEV_WHY_LIMIT.
+RPM = float(os.environ.get("JEV_WHY_RPM", "6"))
+ROW_LIMIT = int(os.environ.get("JEV_WHY_LIMIT", "0")) or None
+
+SLOW = dict(
+    max_concurrency=int(os.environ.get("JEV_WHY_CONCURRENCY", "2")),
+    requests_per_minute=RPM,
+    max_attempts=8,
+    backoff_base_s=20.0,
+    backoff_cap_s=300.0,
+)
+
 HERE = Path(__file__).parent
 ROOT = HERE.parent
 DATA = HERE / "data"
@@ -137,7 +153,7 @@ async def score_corpus(
 ) -> tuple[list[float], list[int]]:
     payload = panel_payload(PANEL)
     requests = [JevRequest(state=r["text"], questions=payload, model=model) for r in rows]
-    executor = AsyncExecutor(client, cache=cache, config=ExecutorConfig(max_concurrency=8))
+    executor = AsyncExecutor(client, cache=cache, config=ExecutorConfig(**SLOW))
 
     done = 0
 
@@ -183,6 +199,9 @@ async def main() -> int:
     model = os.environ.get("JEV_WHY_MODEL", "")
 
     rows = load_rows("test")
+    if ROW_LIMIT:
+        rows = rows[:ROW_LIMIT]
+        print(f"(JEV_WHY_LIMIT={ROW_LIMIT}: scoring a subset)")
     print(f"=== step 0: verify the label convention ({len(rows)} rows) ===")
     verify_label_convention(rows)
 

@@ -174,3 +174,38 @@ async def test_spend_reflects_the_tokens_the_api_reported() -> None:
     result = await AsyncExecutor(client, sleep=_noop_sleep).run(_requests(4))
     assert result.spend.input_tokens == 1000
     assert result.spend.cost_usd == pytest.approx(estimate_cost(1000))
+
+
+async def test_the_backoff_cap_is_configurable_for_long_window_quotas() -> None:
+    """A provider that enforces a quota over an hour needs waits far longer
+    than a per-second limiter does."""
+    slept: list[float] = []
+
+    async def record(seconds: float) -> None:
+        slept.append(seconds)
+
+    client = ScriptedClient(fail_indices={0, 1}, error=RateLimitError)
+    config = ExecutorConfig(
+        max_attempts=3, max_concurrency=1, backoff_base_s=30.0, backoff_cap_s=600.0
+    )
+    await AsyncExecutor(client, config=config, sleep=record).run(_requests(1))
+    assert slept, "a throttled call must wait before retrying"
+    # Sleeps come from two places: retry backoff and the AIMD cooldown, which
+    # is 2s by default. The default backoff base can never exceed 1s over three
+    # attempts, so anything past the cooldown must be the raised base.
+    assert max(slept) > 3.0, "raising the cap alone would not have done this"
+
+
+async def test_raising_the_cap_alone_does_not_lengthen_the_first_retries() -> None:
+    """The trap worth a test: eleven doublings separate the 0.25s base from a
+    600s cap, so a cap on its own changes nothing that matters."""
+    slept: list[float] = []
+
+    async def record(seconds: float) -> None:
+        slept.append(seconds)
+
+    client = ScriptedClient(fail_indices={0, 1}, error=RateLimitError)
+    config = ExecutorConfig(max_attempts=3, max_concurrency=1, backoff_cap_s=600.0)
+    await AsyncExecutor(client, config=config, sleep=record).run(_requests(1))
+    # Nothing beyond the 2s AIMD cooldown: the cap never comes into play.
+    assert max(slept) <= 2.0
