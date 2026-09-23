@@ -36,7 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from jev_why import calibration
 from jev_why.attribution import explain_async
-from jev_why.budget import Budget, estimate_cost
+from jev_why.budget import Budget
 from jev_why.cache import SqliteCache
 from jev_why.chunking import SentenceChunker
 from jev_why.client import JEVAI_KEY_ENV, JevClient, make_client
@@ -77,6 +77,7 @@ def load_dotenv() -> None:
 # it arrives, so an interrupted run resumes without paying twice. Tune with
 # JEV_WHY_RPM and JEV_WHY_LIMIT.
 RPM = float(os.environ.get("JEV_WHY_RPM", "6"))
+MIN_ROWS_FOR_CALIBRATION = 40
 ROW_LIMIT = int(os.environ.get("JEV_WHY_LIMIT", "0")) or None
 
 SLOW = dict(
@@ -198,6 +199,7 @@ async def main() -> int:
     ASSETS.mkdir(exist_ok=True)
     model = os.environ.get("JEV_WHY_MODEL", "")
 
+    skip_corpus = os.environ.get("JEV_WHY_SKIP_CORPUS") == "1"
     rows = load_rows("test")
     if ROW_LIMIT:
         rows = rows[:ROW_LIMIT]
@@ -208,21 +210,33 @@ async def main() -> int:
     cache = SqliteCache(CACHE)
     client = make_client(model=model or None)
     try:
-        print("=== step 1: score the real corpus ===")
-        probabilities, labels = await score_corpus(client, rows, cache, model)
-
-        report = calibration.report(probabilities, labels)
-        print(report.summary())
-        threshold = threshold_for_precision(probabilities, labels, target=0.9)
-        print(threshold.explain())
-        print(
-            selective_thresholds(
-                probabilities, labels, target_precision=0.9, target_npv=0.9
-            ).explain()
-        )
-        (ASSETS / "reliability.svg").write_text(
-            reliability_svg(report, title="Jev on prompt-injection screening"), encoding="utf-8"
-        )
+        report = None
+        threshold = None
+        if skip_corpus:
+            print("=== step 1: skipped (JEV_WHY_SKIP_CORPUS=1) ===\n")
+        else:
+            print("=== step 1: score the real corpus ===")
+            probabilities, labels = await score_corpus(client, rows, cache, model)
+            if len(probabilities) < MIN_ROWS_FOR_CALIBRATION:
+                print(
+                    f"only {len(probabilities)} rows scored; refusing to publish a "
+                    f"calibration figure from fewer than {MIN_ROWS_FOR_CALIBRATION}. "
+                    "A reliability curve on a handful of points is a picture of noise.\n"
+                )
+            else:
+                report = calibration.report(probabilities, labels)
+                print(report.summary())
+                threshold = threshold_for_precision(probabilities, labels, target=0.9)
+                print(threshold.explain())
+                print(
+                    selective_thresholds(
+                        probabilities, labels, target_precision=0.9, target_npv=0.9
+                    ).explain()
+                )
+                (ASSETS / "reliability.svg").write_text(
+                    reliability_svg(report, title="Jev on prompt-injection screening"),
+                    encoding="utf-8",
+                )
 
         print("\n=== step 2: explain one document ===")
         document = composed_document()
@@ -266,50 +280,52 @@ async def main() -> int:
         )
 
         print("\n=== numbers for the README ===")
-        total = estimate_cost(report.n * 30 + explanation.spend.input_tokens)
-        print(
-            json.dumps(
-                {
-                    "corpus_rows": report.n,
-                    "auroc": round(report.auroc, 3),
-                    "ece": round(report.ece, 4),
-                    "brier": round(report.brier, 4),
-                    "reliability": round(report.parts.reliability, 5),
-                    "resolution": round(report.parts.resolution, 5),
-                    "slope": round(report.slope, 3),
-                    "reads_as": report.parts.reads_as(),
-                    "threshold": round(threshold.threshold, 3),
-                    "threshold_precision_lcb": round(threshold.precision_lower_bound, 3),
-                    "threshold_coverage": round(threshold.coverage, 3),
-                    "explain_spans": len(explanation.spans),
-                    "explain_calls": explanation.spend.calls,
-                    "explain_cost_usd": round(explanation.spend.cost_usd, 6),
-                    "noise_sigma": round(question.noise_sigma, 6),
-                    "artifact_score": (
-                        round(explanation.artifact_score, 3)
-                        if explanation.artifact_score is not None
-                        else None
-                    ),
-                    "faithfulness_lift": (round(faithfulness.lift, 4) if faithfulness else None),
-                    "faithfulness_p": (round(faithfulness.p_value, 4) if faithfulness else None),
-                    "model": explanation.model_version,
-                    "approx_total_usd": round(total, 5),
-                },
-                indent=2,
-            )
-        )
-        (ASSETS / "run.json").write_text(
-            json.dumps(
-                {
-                    "auroc": report.auroc,
-                    "ece": report.ece,
-                    "slope": report.slope,
-                    "model": explanation.model_version,
-                },
-                indent=2,
+        # Only figures that were actually measured go in. A key that is absent
+        # is a measurement that did not happen, which is a different thing from
+        # a measurement that came out at zero.
+        summary: dict[str, Any] = {
+            "model": explanation.model_version,
+            "explain_spans": len(explanation.spans),
+            "explain_calls": explanation.spend.calls,
+            "explain_cost_usd_estimated": round(explanation.spend.cost_usd, 6),
+            "noise_sigma": round(question.noise_sigma, 6),
+            "efficiency_gap": round(question.efficiency_gap, 4),
+            "top_span": question.top(1)[0].span.label if question.top(1) else None,
+            "top_span_phi": (round(question.top(1)[0].phi, 4) if question.top(1) else None),
+            "top_span_is_the_injection": (
+                "forget about all" in question.top(1)[0].span.text.lower()
+                if question.top(1)
+                else False
             ),
-            encoding="utf-8",
-        )
+            "baseline": round(question.baseline, 4),
+            "fully_redacted": round(question.empty, 4),
+        }
+        if explanation.artifact_score is not None:
+            summary["artifact_score"] = round(explanation.artifact_score, 3)
+        if faithfulness is not None:
+            summary["faithfulness_lift"] = round(faithfulness.lift, 4)
+            summary["faithfulness_p"] = round(faithfulness.p_value, 4)
+            summary["faithfulness_verdict"] = faithfulness.verdict()
+        if report is not None:
+            summary |= {
+                "corpus_rows": report.n,
+                "auroc": round(report.auroc, 3),
+                "ece": round(report.ece, 4),
+                "brier": round(report.brier, 4),
+                "reliability": round(report.parts.reliability, 5),
+                "resolution": round(report.parts.resolution, 5),
+                "slope": round(report.slope, 3),
+                "reads_as": report.parts.reads_as(),
+            }
+        if threshold is not None:
+            summary |= {
+                "threshold": round(threshold.threshold, 3),
+                "threshold_precision_lcb": round(threshold.precision_lower_bound, 3),
+                "threshold_coverage": round(threshold.coverage, 3),
+            }
+
+        print(json.dumps(summary, indent=2))
+        (ASSETS / "run.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     finally:
         await client.aclose()
         cache.close()
