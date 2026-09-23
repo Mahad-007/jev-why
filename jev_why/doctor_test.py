@@ -27,6 +27,7 @@ class ScriptedProbe:
         self.order_sensitive = order_sensitive
         self.interference = interference
         self.artifact = artifact
+        self.model = "jev-1.13.0"
         self.mask_is_conspicuous = mask_is_conspicuous
         self.calls = 0
 
@@ -49,6 +50,9 @@ class ScriptedProbe:
             answers[name] = Answer(qtype="noul", noul=min(1.0, max(0.0, value)))
         self.calls += 1
         return JevResponse("jev-1.13.0", answers, Usage(len(str(state)) // 4, 0))
+
+    async def aclose(self) -> None:
+        return None
 
 
 async def test_a_clean_account_passes_every_check() -> None:

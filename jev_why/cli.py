@@ -179,11 +179,11 @@ def cmd_drift(args: argparse.Namespace) -> int:
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
-    from jev_why.client import TypeSafeJevClient
+    from jev_why.client import make_client
     from jev_why.doctor import run_doctor
 
     async def go() -> int:
-        client = TypeSafeJevClient(model=args.model)
+        client = make_client(model=args.model or None)
         try:
             report = await run_doctor(client, model=args.model, repeats=args.repeats)
         finally:
@@ -267,7 +267,7 @@ def build_parser() -> argparse.ArgumentParser:
     drift.set_defaults(func=cmd_drift)
 
     doctor = sub.add_parser("doctor", help="measure this library's assumptions live")
-    doctor.add_argument("--model", default=os.environ.get("JEV_WHY_MODEL", "jev-latest"))
+    doctor.add_argument("--model", default=os.environ.get("JEV_WHY_MODEL", ""))
     doctor.add_argument("--repeats", type=int, default=5)
     doctor.set_defaults(func=cmd_doctor)
 

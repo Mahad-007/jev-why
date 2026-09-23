@@ -21,6 +21,8 @@ from jev_why.types import Answer, JevResponse, State, Usage
 OFFLINE_ENV = "JEV_WHY_OFFLINE"
 API_KEY_ENV = "TYPESAFE_API_KEY"
 MODEL_ENV = "JEV_WHY_MODEL"
+JEVAI_KEY_ENV = "JEV_API_KEY"
+PROVIDER_ENV = "JEV_WHY_PROVIDER"
 DEFAULT_MODEL = "jev-latest"
 
 
@@ -47,9 +49,22 @@ class ModelVersionDrift(RuntimeError):
 
 
 class JevClient(Protocol):
+    @property
+    def model(self) -> str:
+        """The concrete model this client asks for.
+
+        Providers disagree about what a model identifier looks like -- TypeSafe
+        takes `jev-latest`, jevai.org rejects it and wants `typesafe-ai/jev` --
+        so the client owns the name and callers read it rather than guessing.
+        It also goes into the cache key, which is why an empty default would be
+        wrong: two providers must not share entries.
+        """
+
     async def system_one(
         self, state: State, questions: Mapping[str, Any], *, model: str | None = None
     ) -> JevResponse: ...
+
+    async def aclose(self) -> None: ...
 
 
 def _convert_answer(raw: Any) -> Answer:
@@ -177,3 +192,171 @@ __all__ = [
     "convert_response",
     "resolve_model",
 ]
+
+
+# --------------------------------------------------------------------------
+# jevai.org
+# --------------------------------------------------------------------------
+
+JEVAI_BASE_URL = "https://www.jevai.org"
+JEVAI_PATH = "/api/v1/decisions"
+JEVAI_BODY_LIMIT = 32 * 1024
+JEVAI_MODEL = "typesafe-ai/jev"
+
+
+class JevRateLimitError(RuntimeError):
+    """The provider is throttling.
+
+    Named so the executor's throttle detection recognises it. jevai.org signals
+    this with HTTP 200 and code -1 rather than a 429, so it has to be raised
+    from the envelope rather than the status line.
+    """
+
+
+class JevApiError(RuntimeError):
+    pass
+
+
+class BodyTooLarge(ValueError):
+    pass
+
+
+@dataclass
+class JevAiClient:
+    """Client for jevai.org, which speaks the same question and answer shapes
+    as TypeSafe's own API behind a different envelope.
+
+    Three differences drive the code below:
+
+      envelope   every reply is {code, message, data} with HTTP 200, including
+                 errors and throttling, so success cannot be read off the
+                 status code.
+
+      no usage   the response carries no token count, so spend is estimated
+                 rather than measured and the budget guard cannot self-
+                 calibrate. Anything reporting cost through this provider has
+                 to say it is an estimate.
+
+      32 KiB     a hard body limit, checked before sending so an oversized
+                 state fails locally instead of costing a round trip.
+    """
+
+    api_key: str | None = None
+    model: str = JEVAI_MODEL
+    base_url: str = JEVAI_BASE_URL
+    timeout_s: float = 60.0
+    transport: Any = None
+    """An injected transport, for tests. Supplying one bypasses the offline
+    guard and the key requirement, because a mock transport cannot reach the
+    network however the environment is configured."""
+
+    def __post_init__(self) -> None:
+        if self.transport is not None:
+            import httpx2
+
+            self._key = self.api_key or "injected"
+            self._client = httpx2.AsyncClient(
+                base_url=self.base_url,
+                timeout=self.timeout_s,
+                transport=self.transport,
+                headers={
+                    "Authorization": f"Bearer {self._key}",
+                    "Content-Type": "application/json",
+                },
+            )
+            return
+        if os.environ.get(OFFLINE_ENV):
+            raise OfflineError(
+                f"{OFFLINE_ENV} is set, so no live client will be built. "
+                "Inject a fake client or a populated cache instead."
+            )
+        key = self.api_key or os.environ.get(JEVAI_KEY_ENV) or os.environ.get(API_KEY_ENV)
+        if not key:
+            raise MissingApiKey(
+                f"set {JEVAI_KEY_ENV} or pass api_key=. jev-why never writes the key "
+                "to disk or into the response cache."
+            )
+        import httpx2
+
+        self._key = key
+        self._client = httpx2.AsyncClient(
+            base_url=self.base_url,
+            timeout=self.timeout_s,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+        )
+
+    async def system_one(
+        self, state: State, questions: Mapping[str, Any], *, model: str | None = None
+    ) -> JevResponse:
+        import json
+
+        body: dict[str, Any] = {"state": state, "questions": dict(questions)}
+        chosen = model or self.model
+        if chosen and chosen not in ("jev-latest", ""):
+            body["model"] = chosen
+
+        encoded = json.dumps(body, ensure_ascii=False).encode("utf-8")
+        if len(encoded) > JEVAI_BODY_LIMIT:
+            raise BodyTooLarge(
+                f"request body is {len(encoded):,} bytes, over the "
+                f"{JEVAI_BODY_LIMIT:,} byte limit at {self.base_url}. Shorten the "
+                "state, or chunk more coarsely so each masked variant is smaller."
+            )
+
+        response = await self._client.post(JEVAI_PATH, content=encoded)
+        if response.status_code in (429, 529):
+            raise JevRateLimitError(f"{response.status_code} from {self.base_url}")
+        if response.status_code == 401:
+            raise MissingApiKey(f"{self.base_url} rejected the key (401)")
+
+        payload = response.json()
+        if payload.get("code") != 0:
+            message = str(payload.get("message", "unknown error"))
+            if "too many requests" in message.lower() or "rate limit" in message.lower():
+                raise JevRateLimitError(message)
+            raise JevApiError(f"{message} (http {response.status_code})")
+
+        data = payload.get("data") or {}
+        answers = {
+            name: _convert_answer(_Wrap(raw)) for name, raw in (data.get("answers") or {}).items()
+        }
+        # No usage in the envelope, so estimate from what was actually sent.
+        return JevResponse(
+            model=str(data.get("model") or chosen or JEVAI_MODEL),
+            answers=answers,
+            usage=Usage(input_tokens=max(1, len(encoded) // 4), output_tokens=0),
+        )
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+
+class _Wrap:
+    """Adapt a plain dict answer to the attribute access _convert_answer wants,
+    so both providers share one conversion path."""
+
+    def __init__(self, raw: Mapping[str, Any]) -> None:
+        self._raw = raw
+
+    def __getattr__(self, name: str) -> Any:
+        return self._raw.get(name)
+
+
+def make_client(
+    *, api_key: str | None = None, model: str | None = None, provider: str | None = None
+) -> JevClient:
+    """Pick a provider.
+
+    Chosen explicitly with JEV_WHY_PROVIDER, otherwise inferred from the key:
+    a `jev_` prefix is a jevai.org key, anything else is TypeSafe's own.
+    """
+    key = api_key or os.environ.get(JEVAI_KEY_ENV) or os.environ.get(API_KEY_ENV) or ""
+    choice = (provider or os.environ.get(PROVIDER_ENV) or "").lower()
+    if not choice:
+        choice = "jevai" if key.startswith("jev_") else "typesafe"
+
+    if choice == "jevai":
+        return JevAiClient(api_key=api_key or key or None, model=model or JEVAI_MODEL)
+    if choice == "typesafe":
+        return TypeSafeJevClient(api_key=api_key, model=resolve_model(model))
+    raise ValueError(f"unknown provider {choice!r}; use 'jevai' or 'typesafe'")

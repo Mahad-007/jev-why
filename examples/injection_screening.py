@@ -39,7 +39,7 @@ from jev_why.attribution import explain_async
 from jev_why.budget import Budget, estimate_cost
 from jev_why.cache import SqliteCache
 from jev_why.chunking import SentenceChunker
-from jev_why.client import TypeSafeJevClient
+from jev_why.client import JEVAI_KEY_ENV, JevClient, make_client
 from jev_why.executor import AsyncExecutor, ExecutorConfig
 from jev_why.questions import Noul, panel_payload
 from jev_why.render import (
@@ -133,7 +133,7 @@ def verify_label_convention(rows: list[dict[str, Any]]) -> None:
 
 
 async def score_corpus(
-    client: TypeSafeJevClient, rows: list[dict[str, Any]], cache: SqliteCache, model: str
+    client: JevClient, rows: list[dict[str, Any]], cache: SqliteCache, model: str
 ) -> tuple[list[float], list[int]]:
     payload = panel_payload(PANEL)
     requests = [JevRequest(state=r["text"], questions=payload, model=model) for r in rows]
@@ -174,20 +174,20 @@ def composed_document() -> str:
 
 async def main() -> int:
     load_dotenv()
-    if not os.environ.get("TYPESAFE_API_KEY"):
+    if not (os.environ.get(JEVAI_KEY_ENV) or os.environ.get("TYPESAFE_API_KEY")):
         raise SystemExit(
-            "No TYPESAFE_API_KEY. Either export it, or put it in a .env file at "
-            "the repository root (which is gitignored)."
+            f"No {JEVAI_KEY_ENV} or TYPESAFE_API_KEY. Either export one, or put it "
+            "in a .env file at the repository root (which is gitignored)."
         )
     ASSETS.mkdir(exist_ok=True)
-    model = os.environ.get("JEV_WHY_MODEL", "jev-latest")
+    model = os.environ.get("JEV_WHY_MODEL", "")
 
     rows = load_rows("test")
     print(f"=== step 0: verify the label convention ({len(rows)} rows) ===")
     verify_label_convention(rows)
 
     cache = SqliteCache(CACHE)
-    client = TypeSafeJevClient(model=model)
+    client = make_client(model=model or None)
     try:
         print("=== step 1: score the real corpus ===")
         probabilities, labels = await score_corpus(client, rows, cache, model)

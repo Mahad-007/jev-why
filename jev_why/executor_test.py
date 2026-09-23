@@ -37,6 +37,9 @@ class ScriptedClient:
             raise self.error(f"scripted failure {ordinal}")
         return JevResponse(self.model, {"q": Answer(qtype="noul", noul=0.5)}, Usage(self.tokens, 0))
 
+    async def aclose(self) -> None:
+        return None
+
 
 class RateLimitError(RuntimeError):
     pass

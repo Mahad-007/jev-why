@@ -27,6 +27,9 @@ classifiers = [
 # and more bug-prone than the thing they replace.
 dependencies = [
     "typesafe-sdk>=0.7.1",
+    # Declared directly rather than leaned on as a transitive dependency of the
+    # SDK: the jevai.org provider uses it on its own account.
+    "httpx2>=2.0.0",
     "numpy>=1.26",
 ]
 

@@ -38,7 +38,7 @@ from jev_why.budget import (
 )
 from jev_why.cache import Cache, resolve_cache
 from jev_why.chunking import Chunker, Segmentation, resolve_chunker, with_mask_mode
-from jev_why.client import JevClient, TypeSafeJevClient, resolve_model
+from jev_why.client import JevClient, make_client
 from jev_why.coalitions import EMPTY, CoalitionPlan, kernelshap_plan, occlusion_plan
 from jev_why.estimators import resolve_estimator
 from jev_why.executor import AsyncExecutor, ExecutorConfig, Progress
@@ -97,7 +97,7 @@ def _prepare(
     chunker: Chunker | str,
     method: str,
     mask: MaskMode | str,
-    model: str | None,
+    model: str,
     artifact_probe: bool,
     shapley_budget: int | None,
     seed: int,
@@ -147,7 +147,7 @@ def _prepare(
         if method == "occlusion"
         else kernelshap_plan(n, budget_calls=shapley_budget, seed=seed)
     )
-    return _Prepared(segmentation, plan, payload, resolve_model(model), tuple(warnings))
+    return _Prepared(segmentation, plan, payload, model, tuple(warnings))
 
 
 def _requests(prepared: _Prepared, *, noise_probes: int) -> tuple[list[JevRequest], int]:
@@ -344,13 +344,20 @@ async def explain_async(
     client: JevClient | None = None,
     progress: Callable[[Progress], None] | None = None,
 ) -> Explanation:
+    # Build the client first: it owns the model identifier, and that identifier
+    # goes into the cache key. Preparing the plan before knowing the provider
+    # would key the cache on a name nothing actually answered to -- and the two
+    # providers disagree about what a valid name even looks like.
+    owned = client is None
+    active = client or make_client(api_key=api_key, model=model)
+
     prepared = _prepare(
         state,
         questions,
         chunker=chunker,
         method=method,
         mask=mask,
-        model=model,
+        model=model or active.model,
         artifact_probe=artifact_probe,
         shapley_budget=shapley_budget,
         seed=seed,
@@ -365,8 +372,6 @@ async def explain_async(
         mean_kept_fraction=_mean_kept_fraction(prepared.plan),
     )
 
-    owned = client is None
-    active = client or TypeSafeJevClient(api_key=api_key, model=prepared.model)
     executor = AsyncExecutor(
         active,
         cache=resolve_cache(cache),

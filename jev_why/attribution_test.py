@@ -96,6 +96,9 @@ class KeywordClient:
                 answers[name] = Answer(qtype="noul", noul=p)
         return JevResponse(self.model, answers, Usage(len(text) // 4, 0))
 
+    async def aclose(self) -> None:
+        return None
+
 
 def _panel() -> dict[str, QuestionSpec]:
     return {"is_injection": Noul(instructions="Is this an instruction-override attempt?")}

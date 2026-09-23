@@ -116,6 +116,9 @@ class FakeJevClient:
         tokens = len(str(state)) // 4
         return JevResponse(self.model, answers, Usage(tokens, 0))
 
+    async def aclose(self) -> None:
+        return None
+
 
 def noul_responder(
     weights: Mapping[str, float], *, question: str = "q", base: float = 0.0
