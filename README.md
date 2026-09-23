@@ -93,6 +93,10 @@ figures below are marked as measured or pending, never assumed.
 - **Attribution compares probabilities across calls**, so a model version
   change mid-run silently corrupts every delta. jev-why refuses the run instead,
   and `jev-latest` is the wrong choice for anything you intend to publish.
+- **Faithfulness costs several times the attribution it checks.** At the default
+  forty trials it is roughly 7x the calls, because the control has to delete
+  random spans as often as ranked ones. It is opt-in for that reason, and on a
+  quota-limited provider it is worth running as a separate stage.
 - **A report contains the document it explains.** That is the point of it, and
   it means an HTML report inherits the sensitivity of its input. The analysed
   text is escaped, and the report embeds no scripts or external resources, so it
