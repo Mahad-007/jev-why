@@ -136,6 +136,17 @@ def panel_payload(questions: Mapping[str, QuestionSpec]) -> dict[str, Any]:
     return {name: questions[name].to_payload() for name in sorted(questions)}
 
 
+def ordered_payload(questions: Mapping[str, QuestionSpec]) -> dict[str, Any]:
+    """Serialise a panel in the order it was declared, without sorting.
+
+    Only `jev-why doctor` uses this. Every other caller goes through
+    panel_payload, which sorts so the cache hits across declaration orders --
+    and sorting is exactly what makes the order-sensitivity probe impossible to
+    run through the normal path, since it erases the thing being measured.
+    """
+    return {name: spec.to_payload() for name, spec in questions.items()}
+
+
 __all__ = [
     "CONTEXT_LIMIT_TOKENS",
     "MAX_CHOICE_OPTIONS",

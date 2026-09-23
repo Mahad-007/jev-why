@@ -283,6 +283,15 @@ class CalibrationReport:
     base_rate: float
     curve: CalibrationCurve
 
+    distribution: tuple[int, ...] = ()
+    """Counts over uniform bins of the predicted probability.
+
+    Deliberately not the calibration bins: those are equal-mass, so their
+    counts are identical by construction and a panel drawn from them would
+    show a flat row of bars carrying no information. What a reader needs to
+    interpret an ECE is where the predictions actually sit.
+    """
+
     def summary(self) -> str:
         direction = "overconfident" if self.slope < 1 else "underconfident"
         return (
@@ -291,6 +300,12 @@ class CalibrationReport:
             f"resolution {self.parts.resolution:.4f}). Calibration slope "
             f"{self.slope:.2f}, so {direction}. {self.parts.reads_as()}."
         )
+
+
+def prediction_histogram(p: Floats, *, bins: int = 20) -> tuple[int, ...]:
+    """Counts of predictions in uniform bins over [0, 1]."""
+    counts, _ = np.histogram(np.asarray(p, dtype=np.float64), bins=bins, range=(0.0, 1.0))
+    return tuple(int(c) for c in counts)
 
 
 def report(p: Floats, y: Labels, *, bins: int = 10) -> CalibrationReport:
@@ -309,6 +324,7 @@ def report(p: Floats, y: Labels, *, bins: int = 10) -> CalibrationReport:
         intercept=intercept,
         base_rate=float(labels.mean()),
         curve=calibration_curve(p, y, bins=bins),
+        distribution=prediction_histogram(p),
     )
 
 
