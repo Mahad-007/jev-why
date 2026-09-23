@@ -50,7 +50,7 @@ from jev_why.render import (
     reliability_svg,
 )
 from jev_why.thresholds import selective_thresholds, threshold_for_precision
-from jev_why.types import JevRequest
+from jev_why.types import JevRequest, MaskMode
 
 
 def load_dotenv() -> None:
@@ -249,6 +249,7 @@ async def main() -> int:
             chunker=SentenceChunker(
                 min_chars=int(os.environ.get("JEV_WHY_MIN_CHARS", "40")),
                 max_spans=int(os.environ.get("JEV_WHY_MAX_SPANS", "64")),
+                mask_mode=MaskMode(os.environ.get("JEV_WHY_MASK", "redact")),
             ),
             # Faithfulness costs far more calls than the attribution itself --
             # roughly 7x at 40 trials -- so on a quota-limited provider it is
@@ -257,6 +258,7 @@ async def main() -> int:
             random_trials=int(os.environ.get("JEV_WHY_TRIALS", "40")),
             noise_probes=int(os.environ.get("JEV_WHY_NOISE_PROBES", "3")),
             concurrency=int(os.environ.get("JEV_WHY_CONCURRENCY", "2")),
+            mask=os.environ.get("JEV_WHY_MASK", "redact"),
             budget=Budget(max_usd=0.25),
         )
         question = explanation["is_injection"]
