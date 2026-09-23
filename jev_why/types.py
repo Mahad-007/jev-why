@@ -127,7 +127,18 @@ class QuestionExplanation:
     cheap estimator is out of its depth."""
 
     noise_sigma: float
+    """Spread across repeated identical calls. Meaningless unless
+    noise_probes >= 2 -- see below."""
+
     estimator: str
+
+    noise_probes: int = 0
+    """How many times the unmodified state was scored to measure the spread.
+
+    Below two, `noise_sigma` is zero because nothing was measured, which is a
+    different claim from a spread that was measured and came out at zero. A
+    reader cannot tell those apart from the sigma alone, so the count travels
+    with it."""
 
     completeness: float = 1.0
     """Fraction of spans whose underlying calls all came back. Below 1.0 the

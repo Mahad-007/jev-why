@@ -1,14 +1,18 @@
 {
   "model": "typesafe-ai/jev",
   "explain_spans": 21,
-  "explain_calls": 4,
-  "explain_cost_usd_estimated": 7.8e-05,
-  "noise_sigma": 0.0,
-  "efficiency_gap": 0.4557,
+  "plan_calls": 44,
+  "calls_this_run": 4,
+  "cache_hits_this_run": 44,
+  "cold_cost_usd_estimated": 0.000676,
+  "noise_sigma": 0.005,
+  "noise_probes": 4,
+  "completeness": 1.0,
+  "efficiency_gap": 0.5696,
   "top_span": "s010",
   "top_span_phi": 0.86,
   "top_span_is_the_injection": true,
   "baseline": 0.89,
   "fully_redacted": 0.1,
-  "artifact_score": 0.865
+  "artifact_score": 0.862
 }

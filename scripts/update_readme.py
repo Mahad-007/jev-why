@@ -42,6 +42,19 @@ def render(run: dict[str, object]) -> str:
             )
         )
 
+    if "completeness" in run:
+        done = float(run["completeness"])  # type: ignore[arg-type]
+        lines.append(
+            _row(
+                "spans measured",
+                f"{done:.0%}",
+                "every span in the sweep"
+                if done >= 1.0
+                else "the rest had calls that never returned, and any of them could "
+                "outrank this table",
+            )
+        )
+
     if "artifact_score" in run:
         score = float(run["artifact_score"])  # type: ignore[arg-type]
         lines.append(
@@ -56,8 +69,12 @@ def render(run: dict[str, object]) -> str:
 
     for key, label, note in (
         ("explain_spans", "spans explained", ""),
-        ("explain_calls", "calls", "for the whole document"),
-        ("completeness", "spans measured", "the rest had calls that never returned"),
+        ("plan_calls", "calls for one explanation", "2n+2 for n spans, from cold"),
+        (
+            "efficiency_gap",
+            "efficiency gap",
+            "high means the spans interact and the cheap estimator is out of its depth",
+        ),
         ("baseline", "p(injection), unmodified", ""),
         ("fully_redacted", "p(injection), all spans removed", ""),
     ):
@@ -90,7 +107,11 @@ def render(run: dict[str, object]) -> str:
         ("threshold", "auto-act threshold", ""),
         ("threshold_coverage", "coverage at that threshold", ""),
         ("faithfulness_verdict", "faithfulness", "against a random control, cross-masked"),
-        ("explain_cost_usd_estimated", "estimated cost", "this provider reports no usage"),
+        (
+            "cold_cost_usd_estimated",
+            "estimated cost, from cold",
+            "this provider reports no usage, so this is an estimate",
+        ),
     ):
         if key in run:
             lines.append(_row(label, run[key], note))

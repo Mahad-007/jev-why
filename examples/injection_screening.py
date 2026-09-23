@@ -36,7 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from jev_why import calibration
 from jev_why.attribution import explain_async
-from jev_why.budget import Budget
+from jev_why.budget import Budget, estimate_plan_cost, estimate_state_tokens
 from jev_why.cache import SqliteCache
 from jev_why.chunking import SentenceChunker
 from jev_why.client import JEVAI_KEY_ENV, JevClient, make_client
@@ -258,6 +258,7 @@ async def main() -> int:
             random_trials=int(os.environ.get("JEV_WHY_TRIALS", "40")),
             noise_probes=int(os.environ.get("JEV_WHY_NOISE_PROBES", "3")),
             concurrency=int(os.environ.get("JEV_WHY_CONCURRENCY", "2")),
+            max_attempts=int(os.environ.get("JEV_WHY_ATTEMPTS", "4")),
             mask=os.environ.get("JEV_WHY_MASK", "redact"),
             budget=Budget(max_usd=0.25),
         )
@@ -296,9 +297,25 @@ async def main() -> int:
         summary: dict[str, Any] = {
             "model": explanation.model_version,
             "explain_spans": len(explanation.spans),
-            "explain_calls": explanation.spend.calls,
-            "explain_cost_usd_estimated": round(explanation.spend.cost_usd, 6),
+            # What a cold run costs, not what this incremental one did. Most of
+            # these runs were resumed from cache, so spend.calls counts only the
+            # gaps that were filled -- an honest number for this invocation and
+            # a misleading one for the README.
+            "plan_calls": 2 * len(explanation.spans) + 2,
+            "calls_this_run": explanation.spend.calls,
+            "cache_hits_this_run": explanation.spend.cache_hits,
+            "cold_cost_usd_estimated": round(
+                estimate_plan_cost(
+                    calls=2 * len(explanation.spans) + 2,
+                    state_tokens=estimate_state_tokens(document),
+                    question_tokens=estimate_state_tokens(str(PANEL)),
+                    mean_kept_fraction=0.5,
+                ).usd,
+                6,
+            ),
             "noise_sigma": round(question.noise_sigma, 6),
+            "noise_probes": question.noise_probes,
+            "completeness": round(question.completeness, 3),
             "efficiency_gap": round(question.efficiency_gap, 4),
             "top_span": question.top(1)[0].span.label if question.top(1) else None,
             "top_span_phi": (round(question.top(1)[0].phi, 4) if question.top(1) else None),

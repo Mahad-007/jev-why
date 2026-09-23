@@ -127,15 +127,30 @@ Model `typesafe-ai/jev`, via the provider named in the run.
 
 | Measurement | Value | What it means |
 |---|---|---|
-| repeat spread | 0.00000 | identical calls agree exactly |
+| repeat spread | 0.00500 | attributions under 0.0150 are suppressed as noise |
+| spans measured | 100% | every span in the sweep |
 | mask artifact | 0.86 | redaction is plainly visible to the model, so some of the signal is the mask |
 | spans explained | 21 |  |
-| calls | 44 | for the whole document |
-| spans measured | 1.0 | the rest had calls that never returned |
+| calls for one explanation | 44 | 2n+2 for n spans, from cold |
+| efficiency gap | 0.5696 | high means the spans interact and the cheap estimator is out of its depth |
 | p(injection), unmodified | 0.89 |  |
 | p(injection), all spans removed | 0.1 |  |
-| top-ranked span | `s005` (0.61) | the injected sentence, recovered from a page of benign text |
+| top-ranked span | `s010` (0.86) | the injected sentence, recovered from a page of benign text |
+| estimated cost, from cold | 0.000676 | this provider reports no usage, so this is an estimate |
 <!-- MEASURED:END -->
+
+The repeat spread is not stable across runs. Separate measurements of the same
+unmodified state gave 0.000, 0.005 and 0.010, so Jev is very nearly but not
+exactly deterministic, and an attribution below roughly 0.03 should not be read
+as evidence. That is the whole reason the noise floor is measured on every run
+rather than assumed once -- a single run that happened to see 0.000 would have
+licensed reading far too much into the small negative attributions in the
+table above.
+
+The efficiency gap of 57% says the spans interact strongly: one span carries
+almost the entire decision, so leave-one-out and leave-one-in disagree about
+how to share credit. That is the cheap estimator reporting its own limits, and
+the fix is `method="shapley"`, which reuses the cached sweep.
 
 The calibration figures come from the unmodified corpus. The attribution
 picture uses a constructed document -- a benign help page with one real

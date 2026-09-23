@@ -55,6 +55,6 @@ esac
 for theme in "${themes[@]}"; do
   [ -f "$OUT/reliability.svg" ]  && shoot reliability  "$OUT/reliability.svg"  "$theme" 460 560
   [ -f "$OUT/faithfulness.svg" ] && shoot faithfulness "$OUT/faithfulness.svg" "$theme" 560 340
-  [ -f "$OUT/report.html" ]      && shoot report       "$OUT/report.html"      "$theme" 960 1400
+  [ -f "$OUT/report.html" ]      && shoot report       "$OUT/report.html"      "$theme" 960 940
 done
 echo "done"

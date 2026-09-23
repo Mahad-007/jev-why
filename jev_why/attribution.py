@@ -288,6 +288,7 @@ def _build_question_explanation(
         attributions=tuple(attributions),
         efficiency_gap=result.efficiency_gap,
         noise_sigma=sigma,
+        noise_probes=len([r for r in probes if r is not None]),
         estimator=estimator_name,
         completeness=measured_count / len(spans) if spans else 0.0,
     )

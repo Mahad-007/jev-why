@@ -5,8 +5,9 @@ tests whether the new model can be trusted, and then spent most of the effort
 trying to prove my own tool wrong." That second half is the differentiator --
 almost nobody shows their own negative controls.
 
-Figures marked PENDING are filled from `assets/run.json` after a live run. Do
-not post with a PENDING left in.
+Figures here came from a live run and are filled from `assets/run.json` by
+`scripts/update_readme.py`. The only thing still to fill is the repository URL,
+which does not exist until you create it. Do not post with a PENDING left in.
 
 ---
 
@@ -47,31 +48,41 @@ artifacts.
 
 Findings I didn't expect:
 
-1. **Jev is exactly deterministic.** Repeated identical calls agreed to the
-digit — measured spread 0.00000. That is not documented anywhere, and it is the
-difference between this technique working and producing noise with error bars.
+1. **Jev is nearly, but not exactly, deterministic.** I scored the same
+unmodified input repeatedly across several runs and measured spreads of 0.000,
+0.005 and 0.010. Not documented anywhere. It matters because it sets the floor:
+anything under about 0.03 is not evidence, it is jitter.
+
+   And that is exactly why the floor is measured on every run instead of once.
+   The first run I did happened to see 0.000, which would have licensed reading
+   real meaning into differences that later turned out to be noise.
 
 2. **The redaction is not invisible.** I asked Jev, on every single call,
 whether the input looked truncated. It said yes, 0.86. So part of what
 occlusion measures here is the mask itself, not the missing content. That is a
 real limitation of the method and it is in the README, not a footnote.
 
-3. **The spans interact strongly** — a 41% efficiency gap, which means the cheap
-leave-one-out estimator is out of its depth on this document and the tool says
-so rather than quietly reporting numbers that do not add up.
+3. **The spans interact strongly** — around a 50% efficiency gap, which means
+the cheap leave-one-out estimator is out of its depth on this document and the
+tool says so rather than quietly reporting numbers that do not add up.
 
-4. **My own tool caught my own broken run.** The provider throttled and 9 of 44
-calls died. An earlier version scored those missing spans as "no effect" and
-produced a confident table whose top span was the wrong one. It now refuses:
-"only 76% of spans were measured; any of them could outrank everything in this
-table." That fix is the most useful thing I wrote all day.
+4. **My own tool caught my own broken run.** The provider throttled and 18 of
+44 calls died. The version I had then scored those missing spans as "no effect"
+and produced a confident table whose top span was not the injected sentence at
+all. It now refuses: "only 76% of spans were measured; any of them could outrank
+everything in this table." Rerunning filled the gaps from cache, a few calls at
+a time, until it did not have to say that any more.
+
+That fix is the most useful thing I wrote all day, and it is the whole thesis in
+miniature: a confident wrong answer is the failure mode worth engineering
+against.
 
 Limits, because they matter more than the demo:
 cost is O(N²) in document length, not linear. Below ~30 spans the permutation
 control can't reach significance however real the effect is. And "questions are
 free" is too strong — their specs are input tokens on every call.
 
-Repo: PENDING_URL
+Repo: PENDING_URL  <- paste the GitHub link once the repo exists
 MIT. It runs offline against a synthetic set function whose Shapley values are
 known in closed form, so you can check the estimators without an API key.
 
@@ -99,8 +110,9 @@ Then I spent most of the effort trying to break it:
   looks to Jev itself
 
 On a page of billing documentation with one injected sentence buried in it, the
-injected sentence scored +0.86. Every other sentence landed between -0.02 and
--0.06. Forty-four calls, a fraction of a cent.
+injected sentence scored +0.86 — necessary and sufficient on its own. Every
+other sentence landed between -0.02 and -0.06, near the measured noise floor.
+Forty-four calls, $0.0007.
 
 Honest limits in the README, including the one that surprised me: below about
 thirty spans, the significance test can't fire however real the effect is.
@@ -117,6 +129,7 @@ PENDING_URL
    Caption: "if the blue line didn't beat the orange one, the tool would say so."
 3. The reliability diagram with its prediction histogram.
    Caption: "strong ranking, weaker probabilities — measured, not asserted."
+   (Needs the corpus run; skip this slide if that has not been done.)
 
 ## Comment to pin
 

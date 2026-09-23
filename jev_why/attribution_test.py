@@ -434,3 +434,26 @@ def test_the_efficiency_gap_is_not_a_nan_dressed_as_a_percentage() -> None:
     result = OcclusionEstimator().estimate(plan, values)
     assert np.isfinite(result.efficiency_gap) or np.isnan(result.efficiency_gap)
     assert not (0 < result.efficiency_gap < 1e-300), "a silent zero would be worse"
+
+
+async def test_an_unmeasured_noise_floor_is_distinguishable_from_a_zero_one() -> None:
+    """Both report sigma 0.0, and they mean opposite things: one says repeated
+    calls agreed exactly, the other says nobody looked."""
+    client = KeywordClient({INJECTION: 4.0})
+    unprobed = await explain_async(
+        DOCUMENT,
+        _panel(),
+        client=client,
+        chunker=SentenceChunker(min_chars=20),
+        noise_probes=0,
+    )
+    probed = await explain_async(
+        DOCUMENT,
+        _panel(),
+        client=KeywordClient({INJECTION: 4.0}),
+        chunker=SentenceChunker(min_chars=20),
+        noise_probes=4,
+    )
+    assert unprobed["is_injection"].noise_probes == 0
+    assert probed["is_injection"].noise_probes == 4
+    assert unprobed["is_injection"].noise_sigma == probed["is_injection"].noise_sigma == 0.0
