@@ -13,6 +13,8 @@ language. examples/injection_screening.py verifies the label convention
 empirically before computing any calibration figure, and the README states what
 the dataset does and does not document.
 
-Nothing in examples/data/composed_page.md comes from the dataset except the
-single injected sentence, which is quoted from it and marked as such in that
-file. That document is a constructed illustration, not a dataset sample.
+Nothing in examples/data/composed_page.md comes from the dataset except one
+sentence, quoted verbatim from a label-1 row and identified in the comment at
+the top of that file. The comment is stripped before the document is sent to
+Jev, so the example never leaks the answer into the input it is asking about.
+That document is a constructed illustration, not a dataset sample.
