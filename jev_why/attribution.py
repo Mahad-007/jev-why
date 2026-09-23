@@ -75,6 +75,11 @@ class ContextTooLarge(ValueError):
     pass
 
 
+class EndpointsUnavailable(RuntimeError):
+    """Neither the unmodified state nor its fully redacted counterpart could be
+    scored, so there is nothing to measure against."""
+
+
 @dataclass(frozen=True)
 class _Prepared:
     segmentation: Segmentation
@@ -379,6 +384,21 @@ async def explain_async(
         config=ExecutorConfig(max_concurrency=concurrency, seed=seed),
     )
     try:
+        # The two endpoint coalitions are load-bearing in a way the rest are
+        # not: every attribution is measured against v(full) and v(empty), so
+        # losing either invalidates the whole run. Buy them first. If they
+        # cannot be had, this stops after two calls instead of discovering it
+        # once the other forty have been paid for.
+        endpoints = await executor.run(requests[:2])
+        if any(r is None for r in endpoints.responses[:2]):
+            reason = "; ".join(endpoints.failures.values()) or "no response"
+            raise EndpointsUnavailable(
+                "could not score the unmodified state and its fully redacted "
+                f"counterpart, so there is no baseline to attribute against: {reason}. "
+                "Nothing further was spent. If the provider is throttling, lower "
+                "the rate and rerun -- cached answers are reused."
+            )
+
         outcome = await executor.run(requests, progress=progress)
     finally:
         if owned and not faithfulness and hasattr(active, "aclose"):
@@ -483,6 +503,7 @@ def explain(state: State, questions: Mapping[str, QuestionSpec], **kwargs: Any) 
 __all__ = [
     "ARTIFACT_QUESTION",
     "ContextTooLarge",
+    "EndpointsUnavailable",
     "explain",
     "explain_async",
 ]

@@ -341,3 +341,29 @@ async def test_faithfulness_is_opt_in() -> None:
         noise_probes=0,
     )
     assert explanation.faithfulness == {}
+
+
+async def test_a_run_stops_after_two_calls_when_the_baseline_cannot_be_scored() -> None:
+    """Every attribution is measured against the unmodified state and its fully
+    redacted counterpart. Losing either invalidates everything, so it must be
+    found out before the rest of the sweep is paid for, not after."""
+    from jev_why.attribution import EndpointsUnavailable
+
+    class RefusingClient(KeywordClient):
+        async def system_one(
+            self, state: Any, questions: Mapping[str, Any], *, model: str | None = None
+        ) -> JevResponse:
+            self.calls += 1
+            raise RuntimeError("scripted outage")
+
+    client = RefusingClient({INJECTION: 4.0})
+    with pytest.raises(EndpointsUnavailable, match="Nothing further was spent"):
+        await explain_async(
+            LONG_DOCUMENT,
+            _panel(),
+            client=client,
+            chunker=SentenceChunker(min_chars=20, max_spans=64),
+            noise_probes=0,
+            concurrency=1,
+        )
+    assert client.calls <= 2 * 4, "only the two endpoints, and their retries"
