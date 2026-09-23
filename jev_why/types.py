@@ -94,6 +94,14 @@ class Attribution:
     """False when |phi| falls below the measured noise floor, in which case this
     row is reporting sampling noise rather than evidence."""
 
+    measured: bool = True
+    """False when a call this span depended on never came back.
+
+    Distinct from `significant` on purpose: an unmeasured span is not a span
+    that was found to do nothing, and collapsing the two would let a failed
+    sweep read as a confident finding of no effect.
+    """
+
 
 @dataclass(frozen=True, slots=True)
 class QuestionExplanation:
@@ -121,10 +129,15 @@ class QuestionExplanation:
     noise_sigma: float
     estimator: str
 
+    completeness: float = 1.0
+    """Fraction of spans whose underlying calls all came back. Below 1.0 the
+    ranking is drawn from a partial sweep and the absent spans could outrank
+    everything in it."""
+
     def top(
         self, k: int = 5, *, signed: bool = False, include_insignificant: bool = False
     ) -> tuple[Attribution, ...]:
-        rows = self.attributions
+        rows = tuple(a for a in self.attributions if a.measured)
         if not include_insignificant:
             rows = tuple(a for a in rows if a.significant)
         key = (lambda a: a.phi) if signed else (lambda a: abs(a.phi))

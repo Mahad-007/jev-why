@@ -1,0 +1,17 @@
+{
+  "model": "typesafe-ai/jev",
+  "explain_spans": 21,
+  "explain_calls": 14,
+  "explain_cost_usd_estimated": 0.000231,
+  "noise_sigma": 0.0,
+  "efficiency_gap": NaN,
+  "top_span": "s004",
+  "top_span_phi": -0.035,
+  "top_span_is_the_injection": false,
+  "baseline": 0.89,
+  "fully_redacted": 0.1,
+  "artifact_score": 0.86,
+  "faithfulness_lift": NaN,
+  "faithfulness_p": 0.0244,
+  "faithfulness_verdict": "faithful: +nan above random, p=0.02"
+}

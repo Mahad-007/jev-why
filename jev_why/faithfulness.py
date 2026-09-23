@@ -82,11 +82,20 @@ class FaithfulnessReport:
     random_trials: int
     cross_masked: bool = False
 
+    complete: bool = True
+    """False when a coalition the metric needed never came back. A curve with
+    holes in it produces a NaN, and a NaN rendered as a lift is a number that
+    looks measured and is not."""
+
     @property
     def credible(self) -> bool:
-        return self.lift > 0 and self.p_value <= 0.1 and self.counter_evidence_holds
+        return (
+            self.complete and self.lift > 0 and self.p_value <= 0.1 and self.counter_evidence_holds
+        )
 
     def verdict(self) -> str:
+        if not self.complete:
+            return "not measurable: some coalitions never returned, so the curve has holes in it"
         if not self.counter_evidence_holds:
             return "not faithful: removing negatively-scored spans did not raise the value"
         if self.lift <= 0:
@@ -165,6 +174,7 @@ def score_faithfulness(
     plan: FaithfulnessPlan, values: Sequence[float], *, cross_masked: bool = False
 ) -> FaithfulnessReport:
     baseline = values[plan.full]
+    complete = all(v == v for v in values)  # NaN is the only value unequal to itself
 
     comp = [baseline - values[i] for i in plan.comprehensiveness]
     suff = [baseline - values[i] for i in plan.sufficiency]
@@ -206,6 +216,7 @@ def score_faithfulness(
         curve=curve,
         random_trials=len(random_comp_per_trial),
         cross_masked=cross_masked,
+        complete=complete,
     )
 
 

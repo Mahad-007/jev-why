@@ -242,7 +242,14 @@ def _build_question_explanation(
     result = resolve_estimator(estimator_name).estimate(plan, values)
     sigma = _noise_sigma(probes, question, value_spec)
 
+    def _came_back(coalition: frozenset[int]) -> bool:
+        if coalition not in plan.coalitions:
+            return False
+        response = responses[plan.index_of(coalition)]
+        return response is not None and question in response.answers
+
     attributions = []
+    measured_count = 0
     for span in spans:
         loo = full - {span.index}
         masked = responses[plan.index_of(loo)] if loo in plan.coalitions else None
@@ -251,6 +258,11 @@ def _build_question_explanation(
             if masked is not None and question in masked.answers
             else abs(float(result.phi[span.index]))
         )
+        # A span is measured only if both the calls its value depends on came
+        # back. Treating an absent call as a zero effect would turn a failed
+        # sweep into a confident finding that the span did nothing.
+        measured = _came_back(full - {span.index}) and _came_back(frozenset({span.index}))
+        measured_count += int(measured)
         attributions.append(
             Attribution(
                 span=span,
@@ -259,7 +271,10 @@ def _build_question_explanation(
                 sufficiency=float(result.sufficiency[span.index]),
                 magnitude=float(mag),
                 stderr=float(result.stderr[span.index]) if result.stderr is not None else None,
-                significant=abs(float(result.phi[span.index])) > SIGNIFICANCE_SIGMA * sigma,
+                significant=(
+                    measured and abs(float(result.phi[span.index])) > SIGNIFICANCE_SIGMA * sigma
+                ),
+                measured=measured,
             )
         )
 
@@ -274,6 +289,7 @@ def _build_question_explanation(
         efficiency_gap=result.efficiency_gap,
         noise_sigma=sigma,
         estimator=estimator_name,
+        completeness=measured_count / len(spans) if spans else 0.0,
     )
 
 
@@ -344,6 +360,7 @@ async def explain_async(
     cross_mask: bool = True,
     cache: Cache | str | None = None,
     concurrency: int = 16,
+    max_attempts: int = 4,
     seed: int = 0,
     api_key: str | None = None,
     client: JevClient | None = None,
@@ -381,7 +398,7 @@ async def explain_async(
         active,
         cache=resolve_cache(cache),
         budget=guard,
-        config=ExecutorConfig(max_concurrency=concurrency, seed=seed),
+        config=ExecutorConfig(max_concurrency=concurrency, max_attempts=max_attempts, seed=seed),
     )
     try:
         # The two endpoint coalitions are load-bearing in a way the rest are
@@ -436,6 +453,15 @@ async def explain_async(
                 f"{question_explanation.efficiency_gap:.0%}), so the cheap estimator is "
                 f"out of its depth. Re-run with method='shapley' -- with the same cache "
                 f"it pays only for the difference."
+            )
+        if question_explanation.completeness < 1.0:
+            missing = [a.span.label for a in question_explanation.attributions if not a.measured]
+            warnings.append(
+                f"{name}: only {question_explanation.completeness:.0%} of spans were "
+                f"measured; {len(missing)} had calls that never returned "
+                f"({', '.join(missing[:6])}{'...' if len(missing) > 6 else ''}). "
+                "Any of them could outrank everything in this table. Rerun -- cached "
+                "answers are reused, so it pays only for what is missing."
             )
         if question_explanation.noise_sigma > 0 and not any(
             a.significant for a in question_explanation.attributions

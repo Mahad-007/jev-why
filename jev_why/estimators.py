@@ -43,8 +43,17 @@ def _endpoints(plan: CoalitionPlan, values: NDArray[np.float64]) -> tuple[float,
 
 
 def _efficiency_gap(phi: NDArray[np.float64], v_full: float, v_empty: float) -> float:
+    """How far the attributions are from summing to what they should.
+
+    Computed over the finite entries only. A single failed call would otherwise
+    turn the whole diagnostic into a NaN, and a NaN printed as a percentage is
+    a number that looks measured and is not.
+    """
     total = v_full - v_empty
-    return float(abs(phi.sum() - total) / max(abs(total), EPS))
+    finite = phi[np.isfinite(phi)]
+    if not finite.size or not np.isfinite(total):
+        return float("nan")
+    return float(abs(finite.sum() - total) / max(abs(total), EPS))
 
 
 @dataclass(frozen=True)

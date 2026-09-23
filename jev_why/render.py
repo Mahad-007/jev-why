@@ -129,6 +129,14 @@ def headline(question: QuestionExplanation) -> str:
     This is the part that stops a heatmap from being decoration. It is printed
     above every rendering of an explanation, including the terminal one.
     """
+    if question.completeness < 0.5:
+        return (
+            f"Only {question.completeness:.0%} of spans were measured for "
+            f"{question.question!r}. That is too little to rank: the spans whose "
+            "calls failed could outrank every one that succeeded. Rerun before "
+            "reading anything into this."
+        )
+
     top = question.top(1)
     if not top:
         return (

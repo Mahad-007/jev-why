@@ -365,5 +365,72 @@ async def test_a_run_stops_after_two_calls_when_the_baseline_cannot_be_scored() 
             chunker=SentenceChunker(min_chars=20, max_spans=64),
             noise_probes=0,
             concurrency=1,
+            max_attempts=2,
         )
-    assert client.calls <= 2 * 4, "only the two endpoints, and their retries"
+    assert client.calls <= 2 * 2, "only the two endpoints, and their retries"
+
+
+async def test_a_partial_sweep_is_reported_as_partial_not_as_a_finding() -> None:
+    """The failure this library exists to prevent, in its own output.
+
+    When calls fail, the spans behind them are unmeasured. Scoring them as zero
+    would turn a broken run into a confident finding that those spans did
+    nothing -- and the real cause could be among them.
+    """
+
+    class FlakyClient(KeywordClient):
+        """Fails deterministically for particular states, so retrying cannot
+        rescue them -- which is what an exhausted quota actually looks like."""
+
+        async def system_one(
+            self, state: Any, questions: Mapping[str, Any], *, model: str | None = None
+        ) -> JevResponse:
+            text = str(state)
+            masked = text.count("[\u2026]")
+            # Let the endpoints through; fail a fixed subset of the sweep.
+            if 0 < masked < 3 and len(text) % 2 == 0:
+                self.calls += 1
+                raise RuntimeError("scripted outage")
+            return await super().system_one(state, questions, model=model)
+
+    client = FlakyClient({INJECTION: 4.0})
+    explanation = await explain_async(
+        LONG_DOCUMENT,
+        _panel(),
+        client=client,
+        chunker=SentenceChunker(min_chars=20, max_spans=64),
+        noise_probes=0,
+        concurrency=1,
+        max_attempts=1,
+    )
+    question = explanation["is_injection"]
+
+    assert question.completeness < 1.0
+    assert any(not a.measured for a in question.attributions)
+    assert all(a.measured for a in question.top(5)), "unmeasured spans must not rank"
+    assert any("never returned" in w for w in explanation.warnings)
+
+
+def test_an_unmeasured_span_is_not_an_uninfluential_one() -> None:
+    """These are different claims and the types keep them apart."""
+    from jev_why.types import Attribution, Span, SpanKind
+
+    span = Span(index=0, label="s000", text="x", kind=SpanKind.SENTENCE)
+    unmeasured = Attribution(span, 0.0, 0.0, 0.0, 0.0, None, significant=False, measured=False)
+    zero_effect = Attribution(span, 0.0, 0.0, 0.0, 0.0, None, significant=False, measured=True)
+    assert not unmeasured.measured
+    assert zero_effect.measured
+
+
+def test_the_efficiency_gap_is_not_a_nan_dressed_as_a_percentage() -> None:
+    import numpy as np
+
+    from jev_why.coalitions import occlusion_plan
+    from jev_why.estimators import OcclusionEstimator
+
+    plan = occlusion_plan(5)
+    values = np.array([1.0, 0.0] + [0.5] * (plan.n_calls - 2))
+    values[4] = np.nan
+    result = OcclusionEstimator().estimate(plan, values)
+    assert np.isfinite(result.efficiency_gap) or np.isnan(result.efficiency_gap)
+    assert not (0 < result.efficiency_gap < 1e-300), "a silent zero would be worse"

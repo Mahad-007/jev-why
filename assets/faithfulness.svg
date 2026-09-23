@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 284" width="480" height="284" role="img" aria-label="Is the explanation faithful?: deletion curve" class="viz" style="max-width:100%;height:auto;font-family:system-ui, -apple-system, 'Segoe UI', sans-serif"><style><![CDATA[
+  .viz { color-scheme: light;
+    --surface: #fcfcfb;
+    --plane: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --series1: #2a78d6;
+    --series2: #eb6834;
+    --neutral: #f0efec;
+    --positive: #d03b3b;
+    --negative: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz { color-scheme: dark;
+    --surface: #1a1a19;
+    --plane: #0d0d0d;
+    --ink: #ffffff;
+    --ink2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --series1: #3987e5;
+    --series2: #d95926;
+    --neutral: #383835;
+    --positive: #e66767;
+    --negative: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] .viz { color-scheme: dark;
+    --surface: #1a1a19;
+    --plane: #0d0d0d;
+    --ink: #ffffff;
+    --ink2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --series1: #3987e5;
+    --series2: #d95926;
+    --neutral: #383835;
+    --positive: #e66767;
+    --negative: #3987e5;
+  }
+]]></style><rect width="480" height="284" fill="var(--surface)"/><text x="48.0" y="20.0" font-size="13" fill="var(--ink)" text-anchor="start" font-weight="600">Is the explanation faithful?</text><text x="48.0" y="34.0" font-size="11" fill="var(--muted)" text-anchor="start" font-weight="400">faithful: +nan above random, p=0.02</text><line x1="48" y1="224.0" x2="384" y2="224.0" stroke="var(--grid)" stroke-width="1"/><text x="40.0" y="228.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.00</text><line x1="48" y1="180.0" x2="384" y2="180.0" stroke="var(--grid)" stroke-width="1"/><text x="40.0" y="184.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.25</text><line x1="48" y1="136.0" x2="384" y2="136.0" stroke="var(--grid)" stroke-width="1"/><text x="40.0" y="140.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.50</text><line x1="48" y1="92.0" x2="384" y2="92.0" stroke="var(--grid)" stroke-width="1"/><text x="40.0" y="96.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.75</text><line x1="48" y1="48.0" x2="384" y2="48.0" stroke="var(--grid)" stroke-width="1"/><text x="40.0" y="52.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">1.00</text><polygon points="81.6,nan 115.2,nan 182.4,nan 384.0,nan 384.0,224.0 81.6,224.0" fill="var(--series2)" opacity="0.13"/><polyline points="81.6,nan 115.2,nan 182.4,nan 384.0,nan" fill="none" stroke="var(--series2)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="81.6" cy="nan" r="3.5" fill="var(--series2)" stroke="var(--surface)" stroke-width="2"/><circle cx="115.2" cy="nan" r="3.5" fill="var(--series2)" stroke="var(--surface)" stroke-width="2"/><circle cx="182.4" cy="nan" r="3.5" fill="var(--series2)" stroke="var(--surface)" stroke-width="2"/><circle cx="384.0" cy="nan" r="3.5" fill="var(--series2)" stroke="var(--surface)" stroke-width="2"/><text x="393.0" y="nan" font-size="10" fill="var(--ink2)" text-anchor="start" font-weight="400">random spans</text><polyline points="81.6,nan 115.2,nan 182.4,224.0 384.0,70.9" fill="none" stroke="var(--series1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="81.6" cy="nan" r="3.5" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="115.2" cy="nan" r="3.5" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="182.4" cy="224.0" r="3.5" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="384.0" cy="70.9" r="3.5" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><text x="393.0" y="74.9" font-size="10" fill="var(--ink2)" text-anchor="start" font-weight="400">attributed</text><text x="81.6" y="239.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">5%</text><text x="115.2" y="239.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">10%</text><text x="182.4" y="239.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">19%</text><text x="384.0" y="239.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">48%</text><text x="216.0" y="255.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">share of spans deleted</text><text x="48.0" y="274.0" font-size="10" fill="var(--ink2)" text-anchor="start" font-weight="400">lift +nan over random · p=0.024 · 40 trials</text></svg>

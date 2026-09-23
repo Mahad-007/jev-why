@@ -97,3 +97,15 @@ def test_cross_masking_is_recorded_on_the_report() -> None:
     plan = faithfulness_plan(list(range(6)), 6, random_trials=3, seed=0)
     report = score_faithfulness(plan, _evaluate(plan, [0.1] * 6), cross_masked=True)
     assert report.cross_masked
+
+
+def test_a_curve_with_holes_refuses_rather_than_reporting_a_nan_lift() -> None:
+    """A NaN rendered as a lift is a number that looks measured and is not."""
+    plan = faithfulness_plan(list(range(10)), 10, random_trials=5, seed=0)
+    values = [float(len(c)) for c in plan.coalitions]
+    values[3] = float("nan")
+    report = score_faithfulness(plan, values)
+
+    assert not report.complete
+    assert not report.credible
+    assert "not measurable" in report.verdict()
