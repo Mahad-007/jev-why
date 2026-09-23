@@ -179,5 +179,49 @@ def test_the_terminal_view_can_drop_colour_for_a_pipe() -> None:
 
 def test_significance_dims_rather_than_hides() -> None:
     markup = heatmap_html(_explanation(significant=False), "is_injection")
-    assert "opacity:.45" in markup
+    assert "opacity:.55" in markup
     assert "Ignore all previous instructions" in markup
+
+
+def test_an_unmeasured_span_looks_different_from_an_uninfluential_one() -> None:
+    """Fainter is not enough. "We did not measure this" and "this did nothing"
+    are opposite claims, so they get different treatments and different
+    hover text."""
+    spans = (_span(0, "measured but small"), _span(1, "never measured"))
+    attributions = (
+        Attribution(spans[0], 0.001, 0.001, 0.0, 0.001, None, significant=False, measured=True),
+        Attribution(spans[1], 0.0, 0.0, 0.0, 0.0, None, significant=False, measured=False),
+    )
+    question = QuestionExplanation(
+        question="q",
+        qtype="noul",
+        baseline=0.9,
+        empty=0.1,
+        link="prob",
+        target=None,
+        attributions=attributions,
+        efficiency_gap=0.0,
+        noise_sigma=0.01,
+        estimator="occlusion",
+        completeness=0.5,
+    )
+    explanation = Explanation(
+        spans=spans,
+        questions={"q": question},
+        spend=Spend(),
+        model_version="m",
+        mask_mode=MaskMode.REDACT,
+        seed=0,
+    )
+
+    markup = heatmap_html(explanation, "q")
+    assert "dashed" in markup
+    assert "never measured" in markup
+    assert "below the noise floor" in markup
+
+
+def test_the_report_legend_names_every_treatment() -> None:
+    """Otherwise grey is a coloured dot that leaves the reader guessing."""
+    page = explanation_html(_explanation())
+    for label in ("raised the answer", "lowered it", "below the noise floor", "never measured"):
+        assert label in page

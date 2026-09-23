@@ -47,7 +47,24 @@ artifacts.
 
 Findings I didn't expect:
 
-PENDING_FINDINGS
+1. **Jev is exactly deterministic.** Repeated identical calls agreed to the
+digit — measured spread 0.00000. That is not documented anywhere, and it is the
+difference between this technique working and producing noise with error bars.
+
+2. **The redaction is not invisible.** I asked Jev, on every single call,
+whether the input looked truncated. It said yes, 0.86. So part of what
+occlusion measures here is the mask itself, not the missing content. That is a
+real limitation of the method and it is in the README, not a footnote.
+
+3. **The spans interact strongly** — a 41% efficiency gap, which means the cheap
+leave-one-out estimator is out of its depth on this document and the tool says
+so rather than quietly reporting numbers that do not add up.
+
+4. **My own tool caught my own broken run.** The provider throttled and 9 of 44
+calls died. An earlier version scored those missing spans as "no effect" and
+produced a confident table whose top span was the wrong one. It now refuses:
+"only 76% of spans were measured; any of them could outrank everything in this
+table." That fix is the most useful thing I wrote all day.
 
 Limits, because they matter more than the demo:
 cost is O(N²) in document length, not linear. Below ~30 spans the permutation
@@ -81,7 +98,9 @@ Then I spent most of the effort trying to break it:
 • an extra question on every call measures how "damaged" the redacted input
   looks to Jev itself
 
-PENDING_HEADLINE
+On a page of billing documentation with one injected sentence buried in it, the
+injected sentence scored +0.86. Every other sentence landed between -0.02 and
+-0.06. Forty-four calls, a fraction of a cent.
 
 Honest limits in the README, including the one that surprised me: below about
 thirty spans, the significance test can't fire however real the effect is.

@@ -118,7 +118,7 @@ def _text(
 
 
 def _intensity(attribution: Attribution, peak: float) -> float:
-    if peak <= 0 or not attribution.significant:
+    if peak <= 0 or not attribution.measured or not attribution.significant:
         return 0.0
     return min(1.0, abs(attribution.phi) / peak)
 
@@ -218,13 +218,25 @@ def heatmap_html(explanation: Explanation, question: str) -> str:
             f"background:color-mix(in srgb, {pole} {weight * 45:.0f}%, transparent);"
             "border-radius:3px;padding:1px 2px;"
         )
-        if not attribution.significant:
-            style += "opacity:.45;"
-        parts.append(
-            f'<mark style="{style}" title="{attribution.phi:+.4f} '
-            f"(necessity {attribution.necessity:+.3f}, sufficiency "
-            f'{attribution.sufficiency:+.3f})">{escaped}</mark>'
-        )
+        if not attribution.measured:
+            # Dashed, not merely faint: "we did not measure this" and "this did
+            # nothing" are opposite claims and must not look alike.
+            style += "opacity:.45;outline:1px dashed var(--muted);outline-offset:1px;"
+            note = "never measured: a call it depended on did not return"
+        elif not attribution.significant:
+            style += "opacity:.55;"
+            note = (
+                f"{attribution.phi:+.4f}, below the noise floor "
+                f"(necessity {attribution.necessity:+.3f}, "
+                f"sufficiency {attribution.sufficiency:+.3f})"
+            )
+        else:
+            note = (
+                f"{attribution.phi:+.4f} "
+                f"(necessity {attribution.necessity:+.3f}, "
+                f"sufficiency {attribution.sufficiency:+.3f})"
+            )
+        parts.append(f'<mark style="{style}" title="{html.escape(note)}">{escaped}</mark>')
     return " ".join(parts)
 
 
@@ -516,11 +528,21 @@ def explanation_html(explanation: Explanation, *, title: str = "jev-why") -> str
             )
         )
 
+    legend = (
+        '<p class="legend">'
+        '<span class="swatch pos"></span> raised the answer'
+        '<span class="swatch neg"></span> lowered it'
+        '<span class="swatch none"></span> below the noise floor'
+        '<span class="swatch unmeasured"></span> never measured'
+        "</p>"
+    )
+
     blocks = "".join(
         f"""
     <section>
       <h2>{html.escape(s.question)}</h2>
       <p class="headline">{html.escape(s.headline)}</p>
+      {legend}
       <div class="doc">{s.heatmap}</div>
       <pre>{html.escape(s.table)}</pre>
       {s.faithfulness or ""}
@@ -548,6 +570,16 @@ def explanation_html(explanation: Explanation, *, title: str = "jev-why") -> str
   pre {{ background:var(--surface); border:1px solid var(--grid); border-radius:8px;
          padding:12px 16px; overflow-x:auto; font-size:12px; color:var(--ink2); }}
   .warn {{ color:var(--ink2); font-size:12px; padding-left:18px; }}
+  .legend {{ color:var(--ink2); font-size:12px; margin:0 0 10px; }}
+  .swatch {{ display:inline-block; width:11px; height:11px; border-radius:3px;
+             margin:0 5px 0 14px; vertical-align:-1px;
+             border:1px solid var(--grid); }}
+  .legend .swatch:first-child {{ margin-left:0; }}
+  .swatch.pos {{ background:color-mix(in srgb, var(--positive) 45%, transparent); }}
+  .swatch.neg {{ background:color-mix(in srgb, var(--negative) 45%, transparent); }}
+  .swatch.none {{ background:var(--neutral); }}
+  .swatch.unmeasured {{ background:var(--neutral); opacity:.45;
+                        border-style:dashed; }}
   section {{ margin-bottom:8px; }}
 </style></head>
 <body class="viz"><main>

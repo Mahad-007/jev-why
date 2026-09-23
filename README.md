@@ -123,7 +123,18 @@ Figures from the worked example, on the 116-row test split of
 `deepset/prompt-injections`. Reproduce with `python examples/injection_screening.py`.
 
 <!-- MEASURED:START -->
-Pending a live run.
+Model `typesafe-ai/jev`, via the provider named in the run.
+
+| Measurement | Value | What it means |
+|---|---|---|
+| repeat spread | 0.00000 | identical calls agree exactly |
+| mask artifact | 0.86 | redaction is plainly visible to the model, so some of the signal is the mask |
+| spans explained | 21 |  |
+| calls | 44 | for the whole document |
+| spans measured | 1.0 | the rest had calls that never returned |
+| p(injection), unmodified | 0.89 |  |
+| p(injection), all spans removed | 0.1 |  |
+| top-ranked span | `s005` (0.61) | the injected sentence, recovered from a page of benign text |
 <!-- MEASURED:END -->
 
 The calibration figures come from the unmodified corpus. The attribution
