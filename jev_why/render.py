@@ -487,6 +487,12 @@ class ReportSection:
 
 
 def explanation_html(explanation: Explanation, *, title: str = "jev-why") -> str:
+    """A self-contained report: no scripts, no external resources, every piece
+    of the analysed text escaped.
+
+    It is safe to open. It is not safe to share more widely than its input,
+    because a report about a document necessarily contains that document.
+    """
     sections: list[ReportSection] = []
     for name, question in explanation.questions.items():
         report = explanation.faithfulness.get(name)

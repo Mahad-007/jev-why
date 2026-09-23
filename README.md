@@ -93,6 +93,12 @@ figures below are marked as measured or pending, never assumed.
 - **Attribution compares probabilities across calls**, so a model version
   change mid-run silently corrupts every delta. jev-why refuses the run instead,
   and `jev-latest` is the wrong choice for anything you intend to publish.
+- **A report contains the document it explains.** That is the point of it, and
+  it means an HTML report inherits the sensitivity of its input. The analysed
+  text is escaped, and the report embeds no scripts or external resources, so it
+  is safe to open -- but it is not safe to share any more widely than the thing
+  it analyses. The same goes for the response cache, which stores raw states
+  (owner-only, and `NullCache` writes nothing at all).
 - **Provider quotas bite.** jevai.org limits by quota over a long window rather
   than rate per second, and signals exhaustion with HTTP 200 and `code: -1`
   rather than a 429. Pace with `--concurrency 1` and a low rate; every answer is
