@@ -167,7 +167,9 @@ to compute a calibration figure if it looks reversed.
 ## Quickstart
 
 ```bash
-pip install jev-why
+# Not on PyPI yet -- install from the repository.
+pip install git+https://github.com/Mahad-007/jev-why
+
 export JEV_API_KEY=...        # or TYPESAFE_API_KEY for TypeSafe's own API
 jev-why doctor                # about a cent; check the assumptions first
 ```
@@ -195,7 +197,7 @@ spans. It costs more calls, so it is never billed silently.
 Running it yourself:
 
 ```bash
-git clone <this repo> && cd jev-why
+git clone https://github.com/Mahad-007/jev-why && cd jev-why
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 ./verify                      # lint, types, tests -- passes with no API key
 python examples/fetch_dataset.py

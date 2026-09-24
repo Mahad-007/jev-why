@@ -5,9 +5,9 @@ tests whether the new model can be trusted, and then spent most of the effort
 trying to prove my own tool wrong." That second half is the differentiator --
 almost nobody shows their own negative controls.
 
-Figures here came from a live run and are filled from `assets/run.json` by
-`scripts/update_readme.py`. The only thing still to fill is the repository URL,
-which does not exist until you create it. Do not post with a PENDING left in.
+Every figure here came from a live run against jevai.org and is filled from
+`assets/run.json` by `scripts/update_readme.py`. Nothing in this file is
+estimated or illustrative. Check the repo link resolves before posting.
 
 ---
 
@@ -82,9 +82,10 @@ cost is O(N²) in document length, not linear. Below ~30 spans the permutation
 control can't reach significance however real the effect is. And "questions are
 free" is too strong — their specs are input tokens on every call.
 
-Repo: PENDING_URL  <- paste the GitHub link once the repo exists
-MIT. It runs offline against a synthetic set function whose Shapley values are
-known in closed form, so you can check the estimators without an API key.
+Repo: https://github.com/Mahad-007/jev-why
+MIT, install from source. It runs offline against a synthetic set function
+whose Shapley values are known in closed form, so you can check the estimators
+without an API key.
 
 #AI #MachineLearning #Explainability
 
@@ -117,7 +118,7 @@ Forty-four calls, $0.0007.
 Honest limits in the README, including the one that surprised me: below about
 thirty spans, the significance test can't fire however real the effect is.
 
-PENDING_URL
+https://github.com/Mahad-007/jev-why
 
 ---
 
