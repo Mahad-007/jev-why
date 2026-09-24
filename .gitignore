@@ -22,3 +22,6 @@ build/
 .ruff_cache/
 .coverage
 htmlcov/
+
+# Build artifacts
+dist/

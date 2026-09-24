@@ -16,8 +16,8 @@ That produces a story about a decision rather than the reasons for it, and the
 story is written by a different model than the one that decided.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/report-dark.png">
-  <img src="assets/report-light.png" alt="A page of billing documentation with one sentence highlighted: the injected instruction, scored +0.860. Every other sentence sits near zero." width="880">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Mahad-007/jev-why/main/assets/report-dark.png">
+  <img src="https://raw.githubusercontent.com/Mahad-007/jev-why/main/assets/report-light.png" alt="A page of billing documentation with one sentence highlighted: the injected instruction, scored +0.860. Every other sentence sits near zero." width="880">
 </picture>
 
 *One injected sentence in a page of billing documentation. It scored +0.860 and
@@ -155,8 +155,8 @@ Model `typesafe-ai/jev`, via the provider named in the run.
 <!-- MEASURED:END -->
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/reliability-dark.png">
-  <img src="assets/reliability-light.png" alt="Reliability diagram: the observed curve sits well above the diagonal, meaning Jev predicts far lower probabilities than the outcomes justify. The histogram below shows most predictions bunched near zero." width="440">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Mahad-007/jev-why/main/assets/reliability-dark.png">
+  <img src="https://raw.githubusercontent.com/Mahad-007/jev-why/main/assets/reliability-light.png" alt="Reliability diagram: the observed curve sits well above the diagonal, meaning Jev predicts far lower probabilities than the outcomes justify. The histogram below shows most predictions bunched near zero." width="440">
 </picture>
 
 The calibration result is the opposite of the usual complaint. Jev is widely
