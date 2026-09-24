@@ -1,0 +1,31 @@
+Everyone says Jev is overconfident. I measured it, and on my task it was the opposite.
+
+109 labelled prompt-injection samples. Calibration slope 2.54: badly underconfident, its probabilities far too timid for what actually happens. ECE 0.276.
+
+The ranking, though, was excellent. AUROC 0.941.
+
+So trust the ordering, don't trust the number attached to it. The threshold that actually holds 90% precision came out at 0.10, not 0.5.
+
+I only found that because I built the instrument instead of guessing.
+
+jev-why explains a Jev decision by redacting one span at a time and measuring what the probability does. That delta is a causal effect, not a rationalisation from some second model. Jev's output tokens are free, so explaining a whole document runs about $0.0007.
+
+On a page of billing documentation with one injected sentence buried in it, that sentence scored +0.860. Every other sentence landed between -0.02 and -0.06.
+
+Then I spent most of the time trying to prove my own tool wrong:
+
+• every ranking is scored against random spans at the same budget
+• faithfulness is measured under a different masker, so the test can't reward the masker's own artifacts
+• repeated identical calls set a noise floor, and anything under it gets reported as noise rather than insight
+• an extra question on every call measures how damaged the redacted input looks to Jev itself
+
+That last one came back at 0.86. The redaction is plainly visible to the model, so part of what I'm measuring is the mask and not the missing content. That's in the README, not buried in a footnote.
+
+The tool also caught my own broken run. Throttling killed 18 of 44 calls, and an earlier version scored the missing spans as "no effect" and confidently named the wrong sentence. It refuses to do that now. Best thing I wrote all week.
+
+One task, 109 rows, one question wording. Don't generalise from it. Measure your own.
+
+pip install jev-why
+github.com/Mahad-007/jev-why
+
+#AI #MachineLearning #Explainability #MLOps
