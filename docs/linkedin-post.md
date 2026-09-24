@@ -5,6 +5,9 @@ tests whether the new model can be trusted, and then spent most of the effort
 trying to prove my own tool wrong." That second half is the differentiator --
 almost nobody shows their own negative controls.
 
+The strongest single fact available is that the calibration result contradicts
+the consensus. Lead with it in at least one version.
+
 Every figure here came from a live run against jevai.org and is filled from
 `assets/run.json` by `scripts/update_readme.py`. Nothing in this file is
 estimated or illustrative. Check the repo link resolves before posting.
@@ -47,6 +50,20 @@ produce the ranking, because otherwise the test quietly rewards the masker's own
 artifacts.
 
 Findings I didn't expect:
+
+0. **Everyone says Jev is overconfident. On my task it was the opposite, and
+badly.** Calibration slope 2.54 — its probabilities are far too timid for what
+actually happens. ECE 0.276. Meanwhile the *ranking* was excellent: AUROC
+0.941 over 109 labelled prompt-injection samples.
+
+   So the ordering can be trusted and the numbers attached to it cannot. The
+   fitted decision threshold landed at **0.10**, not 0.5, holding precision at
+   or above 0.901 across 42% of cases.
+
+   I would not generalise that to "Jev is underconfident". Calibration depends
+   on your question wording, your domain and your base rate — which is the
+   whole argument for measuring it on your own data instead of adopting
+   anyone's headline, mine included.
 
 1. **Jev is nearly, but not exactly, deterministic.** I scored the same
 unmodified input repeatedly across several runs and measured spreads of 0.000,
@@ -93,9 +110,16 @@ without an API key.
 
 ## Draft B — the shorter, sharper version
 
-Everyone's asking whether Jev's confidence can be trusted in production.
+Everyone says Jev is overconfident.
 
-I stopped speculating and built the instrument.
+I measured it on 109 labelled prompt-injection samples. On that task it is the
+opposite — calibration slope 2.54, badly underconfident — while its *ranking*
+is excellent at AUROC 0.941.
+
+Trust the ordering. Don't trust the number attached to it. The fitted threshold
+came out at 0.10, not 0.5.
+
+So I built the instrument rather than kept speculating.
 
 jev-why redacts one span at a time and measures what the probability does. The
 delta is a causal effect, not a rationalisation — and because Jev's output
@@ -128,9 +152,11 @@ https://github.com/Mahad-007/jev-why
    Caption: "one injected sentence in a page of billing docs. Nothing else moved."
 2. The faithfulness curve: attributed vs random control, with the gap shaded.
    Caption: "if the blue line didn't beat the orange one, the tool would say so."
-3. The reliability diagram with its prediction histogram.
-   Caption: "strong ranking, weaker probabilities — measured, not asserted."
-   (Needs the corpus run; skip this slide if that has not been done.)
+3. The reliability diagram with its prediction histogram
+   (assets/reliability-light.png). Arguably this should be slide 1 — the curve
+   sitting well above the diagonal is the most surprising thing here.
+   Caption: "everyone says Jev is overconfident. 109 labelled samples say the
+   opposite on this task. Measured, not asserted."
 
 ## Comment to pin
 

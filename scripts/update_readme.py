@@ -30,13 +30,17 @@ def render(run: dict[str, object]) -> str:
         "|---|---|---|",
     ]
 
-    if "noise_sigma" in run:
-        sigma = float(run["noise_sigma"])  # type: ignore[arg-type]
+    # A spread of zero from two probes and a spread of zero from none are
+    # opposite claims. Without at least two, nothing was measured and the row
+    # is omitted rather than asserting agreement nobody looked for.
+    probes = int(run.get("noise_probes", 0))
+    if "noise_sigma" in run and probes >= 2:
+        sigma = float(run["noise_sigma"])
         lines.append(
             _row(
                 "repeat spread",
-                f"{sigma:.5f}",
-                "identical calls agree exactly"
+                f"{sigma:.5f} over {probes} identical calls",
+                "they agree exactly"
                 if sigma == 0
                 else f"attributions under {3 * sigma:.4f} are suppressed as noise",
             )
@@ -98,11 +102,24 @@ def render(run: dict[str, object]) -> str:
             )
         )
 
+    if "slope" in run:
+        slope = float(run["slope"])  # type: ignore[arg-type]
+        lines.append(
+            _row(
+                "calibration slope",
+                f"{slope:.2f}",
+                "well calibrated"
+                if 0.9 <= slope <= 1.1
+                else "overconfident: the probabilities are too extreme"
+                if slope < 0.9
+                else "underconfident: the probabilities are too timid for what actually happens",
+            )
+        )
+
     for key, label, note in (
         ("corpus_rows", "corpus rows scored", "unmodified test split"),
         ("auroc", "AUROC", "ranking quality"),
         ("ece", "ECE", "calibration error"),
-        ("slope", "calibration slope", "below 1 is overconfident"),
         ("reads_as", "reads as", ""),
         ("threshold", "auto-act threshold", ""),
         ("threshold_coverage", "coverage at that threshold", ""),

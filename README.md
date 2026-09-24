@@ -136,7 +136,6 @@ Model `typesafe-ai/jev`, via the provider named in the run.
 
 | Measurement | Value | What it means |
 |---|---|---|
-| repeat spread | 0.00500 | attributions under 0.0150 are suppressed as noise |
 | spans measured | 100% | every span in the sweep |
 | mask artifact | 0.86 | redaction is plainly visible to the model, so some of the signal is the mask |
 | spans explained | 21 |  |
@@ -145,8 +144,36 @@ Model `typesafe-ai/jev`, via the provider named in the run.
 | p(injection), unmodified | 0.89 |  |
 | p(injection), all spans removed | 0.1 |  |
 | top-ranked span | `s010` (0.86) | the injected sentence, recovered from a page of benign text |
+| calibration slope | 2.54 | underconfident: the probabilities are too timid for what actually happens |
+| corpus rows scored | 109 | unmodified test split |
+| AUROC | 0.941 | ranking quality |
+| ECE | 0.276 | calibration error |
+| reads as | ranking and calibration contribute comparably |  |
+| auto-act threshold | 0.1 |  |
+| coverage at that threshold | 0.422 |  |
 | estimated cost, from cold | 0.000676 | this provider reports no usage, so this is an estimate |
 <!-- MEASURED:END -->
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/reliability-dark.png">
+  <img src="assets/reliability-light.png" alt="Reliability diagram: the observed curve sits well above the diagonal, meaning Jev predicts far lower probabilities than the outcomes justify. The histogram below shows most predictions bunched near zero." width="440">
+</picture>
+
+The calibration result is the opposite of the usual complaint. Jev is widely
+described as overconfident. On this task it is badly **under**confident: a
+calibration slope of 2.54 means its probabilities are far too timid for what
+actually happens, and the ECE of 0.276 is large. The ranking, meanwhile, is
+excellent -- AUROC 0.941. So the ordering can be trusted and the numbers
+attached to it cannot, which is exactly the case threshold fitting exists for:
+the solved cutoff sits at **0.10**, not 0.5, and holds precision at or above
+0.901 across 42% of decisions.
+
+Read that as a fact about this task rather than about Jev. Calibration depends
+on the question wording, the domain and the base rate, and 109 rows is a small
+sample -- which is the argument for measuring it on your own data instead of
+adopting anyone's headline, including this one. Seven calls were lost to
+throttling and dropped; they were lost at random rather than selected, but they
+were lost.
 
 The repeat spread is not stable across runs. Separate measurements of the same
 unmodified state gave 0.000, 0.005 and 0.010, so Jev is very nearly but not

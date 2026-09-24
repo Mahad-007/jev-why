@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 514" width="380" height="514" role="img" aria-label="Jev on prompt-injection screening: reliability diagram" class="viz" style="max-width:100%;height:auto;font-family:system-ui, -apple-system, 'Segoe UI', sans-serif"><style><![CDATA[
+  .viz { color-scheme: light;
+    --surface: #fcfcfb;
+    --plane: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --series1: #2a78d6;
+    --series2: #eb6834;
+    --neutral: #f0efec;
+    --positive: #d03b3b;
+    --negative: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz { color-scheme: dark;
+    --surface: #1a1a19;
+    --plane: #0d0d0d;
+    --ink: #ffffff;
+    --ink2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --series1: #3987e5;
+    --series2: #d95926;
+    --neutral: #383835;
+    --positive: #e66767;
+    --negative: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] .viz { color-scheme: dark;
+    --surface: #1a1a19;
+    --plane: #0d0d0d;
+    --ink: #ffffff;
+    --ink2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --series1: #3987e5;
+    --series2: #d95926;
+    --neutral: #383835;
+    --positive: #e66767;
+    --negative: #3987e5;
+  }
+]]></style><rect width="380" height="514" fill="var(--surface)"/><text x="46.0" y="20.0" font-size="13" fill="var(--ink)" text-anchor="start" font-weight="600">Jev on prompt-injection screening</text><text x="46.0" y="34.0" font-size="11" fill="var(--muted)" text-anchor="start" font-weight="400">ranking and calibration contribute comparably</text><line x1="46" y1="46" x2="62" y2="46" stroke="var(--series1)" stroke-width="2"/><text x="68.0" y="49.0" font-size="10" fill="var(--ink2)" text-anchor="start" font-weight="400">observed</text><line x1="132" y1="46" x2="148" y2="46" stroke="var(--axis)" stroke-width="1.5" stroke-dasharray="4 4"/><text x="154.0" y="49.0" font-size="10" fill="var(--ink2)" text-anchor="start" font-weight="400">perfect calibration</text><line x1="46.0" y1="382.0" x2="366.0" y2="382.0" stroke="var(--grid)" stroke-width="1"/><text x="38.0" y="386.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.0</text><text x="46.0" y="397.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">0.0</text><line x1="46.0" y1="318.0" x2="366.0" y2="318.0" stroke="var(--grid)" stroke-width="1"/><text x="38.0" y="322.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.2</text><text x="110.0" y="397.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">0.2</text><line x1="46.0" y1="254.0" x2="366.0" y2="254.0" stroke="var(--grid)" stroke-width="1"/><text x="38.0" y="258.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.4</text><text x="174.0" y="397.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">0.4</text><line x1="46.0" y1="190.0" x2="366.0" y2="190.0" stroke="var(--grid)" stroke-width="1"/><text x="38.0" y="194.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.6</text><text x="238.0" y="397.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">0.6</text><line x1="46.0" y1="126.0" x2="366.0" y2="126.0" stroke="var(--grid)" stroke-width="1"/><text x="38.0" y="130.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">0.8</text><text x="302.0" y="397.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">0.8</text><line x1="46.0" y1="62.0" x2="366.0" y2="62.0" stroke="var(--grid)" stroke-width="1"/><text x="38.0" y="66.0" font-size="10" fill="var(--muted)" text-anchor="end" font-weight="400">1.0</text><text x="366.0" y="397.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">1.0</text><line x1="46.0" y1="382.0" x2="366.0" y2="62.0" stroke="var(--axis)" stroke-width="1.5" stroke-dasharray="4 4"/><line x1="49.2" y1="382.0" x2="49.2" y2="171.6" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><line x1="52.4" y1="382.0" x2="52.4" y2="320.0" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><line x1="55.6" y1="358.6" x2="55.6" y2="258.7" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><line x1="58.8" y1="333.5" x2="58.8" y2="175.2" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><line x1="65.5" y1="337.8" x2="65.5" y2="187.0" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><line x1="88.1" y1="168.6" x2="88.1" y2="66.4" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><line x1="180.1" y1="144.8" x2="180.1" y2="62.0" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><line x1="295.9" y1="144.8" x2="295.9" y2="62.0" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><line x1="352.0" y1="144.8" x2="352.0" y2="62.0" stroke="var(--series1)" stroke-width="1.5" opacity="0.5"/><polyline points="49.2,382.0 52.4,382.0 55.6,323.8 58.8,265.6 65.5,275.3 88.1,86.6 180.1,62.0 295.9,62.0 352.0,62.0" fill="none" stroke="var(--series1)" stroke-width="2" stroke-linejoin="round"/><circle cx="49.2" cy="382.0" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="52.4" cy="382.0" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="55.6" cy="323.8" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="58.8" cy="265.6" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="65.5" cy="275.3" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="88.1" cy="86.6" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="180.1" cy="62.0" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="295.9" cy="62.0" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><circle cx="352.0" cy="62.0" r="4" fill="var(--series1)" stroke="var(--surface)" stroke-width="2"/><text x="206.0" y="413.0" font-size="10" fill="var(--muted)" text-anchor="middle" font-weight="400">predicted probability</text><text x="46.0" y="434.0" font-size="9" fill="var(--muted)" text-anchor="start" font-weight="400">where the predictions sit</text><rect x="47.0" y="440.0" width="14.0" height="44.0" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="63.0" y="473.6" width="14.0" height="10.4" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="79.0" y="474.5" width="14.0" height="9.5" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="95.0" y="482.3" width="14.0" height="1.7" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="111.0" y="481.4" width="14.0" height="2.6" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="127.0" y="483.0" width="14.0" height="1.0" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="143.0" y="483.0" width="14.0" height="1.0" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="191.0" y="483.0" width="14.0" height="1.0" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="207.0" y="483.0" width="14.0" height="1.0" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="223.0" y="481.4" width="14.0" height="2.6" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="239.0" y="483.0" width="14.0" height="1.0" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="255.0" y="481.4" width="14.0" height="2.6" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="287.0" y="480.5" width="14.0" height="3.5" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="303.0" y="483.0" width="14.0" height="1.0" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="319.0" y="482.3" width="14.0" height="1.7" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="335.0" y="478.0" width="14.0" height="6.0" rx="2" fill="var(--series1)" opacity="0.38"/><rect x="351.0" y="479.7" width="14.0" height="4.3" rx="2" fill="var(--series1)" opacity="0.38"/><text x="46.0" y="504.0" font-size="10" fill="var(--ink2)" text-anchor="start" font-weight="400">ECE 0.276 · AUROC 0.941 · slope 2.54 · n=109</text></svg>
