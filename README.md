@@ -15,6 +15,15 @@ The usual answer is to ask a language model to explain the decision afterwards.
 That produces a story about a decision rather than the reasons for it, and the
 story is written by a different model than the one that decided.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/report-dark.png">
+  <img src="assets/report-light.png" alt="A page of billing documentation with one sentence highlighted: the injected instruction, scored +0.860. Every other sentence sits near zero." width="880">
+</picture>
+
+*One injected sentence in a page of billing documentation. It scored +0.860 and
+every other sentence landed between -0.02 and -0.06. The document is
+constructed; the figures are measured.*
+
 ## The wedge
 
 jev-why measures the reasons instead of narrating them. Split the state into
