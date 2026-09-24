@@ -203,8 +203,7 @@ to compute a calibration figure if it looks reversed.
 ## Quickstart
 
 ```bash
-# Not on PyPI yet -- install from the repository.
-pip install git+https://github.com/Mahad-007/jev-why
+pip install jev-why
 
 export JEV_API_KEY=...        # or TYPESAFE_API_KEY for TypeSafe's own API
 jev-why doctor                # about a cent; check the assumptions first

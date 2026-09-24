@@ -100,7 +100,7 @@ control can't reach significance however real the effect is. And "questions are
 free" is too strong — their specs are input tokens on every call.
 
 Repo: https://github.com/Mahad-007/jev-why
-MIT, install from source. It runs offline against a synthetic set function
+`pip install jev-why`, MIT. It runs offline against a synthetic set function
 whose Shapley values are known in closed form, so you can check the estimators
 without an API key.
 
