@@ -233,6 +233,9 @@ class AsyncExecutor:
                     failures[index] = str(exceeded)
                 return
 
+        # TaskGroup, not gather: a budget trip or a model-version change has to
+        # cancel the calls still in flight rather than let them keep spending.
+        # It is 3.11+, which is what sets this package's floor.
         async with asyncio.TaskGroup() as group:
             for index, request in enumerate(requests):
                 group.create_task(one(index, request))

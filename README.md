@@ -211,6 +211,6 @@ against ground truth rather than against each other.
 
 ## Stack
 
-Python 3.10+ - numpy - httpx2 - typesafe-sdk. Charts are hand-rolled SVG, so
+Python 3.11+ - numpy - httpx2 - typesafe-sdk. Charts are hand-rolled SVG, so
 there is no plotting dependency and a diagram can be produced in a container
 with nothing extra installed.

@@ -16,7 +16,7 @@ jobs:
       matrix:
         # The floor and the ceiling. Everything between is covered by the floor's
         # syntax rules and the ceiling's deprecations.
-        python-version: ["3.10", "3.14"]
+        python-version: ["3.11", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
